@@ -1,0 +1,12 @@
+/Users/zedyc/workspace/arceos/target/debug/deps/os_str_bytes-96b7f1b43a5c022f.rmeta: /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/lib.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/common/mod.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/common/raw.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/iter.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/pattern.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/raw_str.rs
+
+/Users/zedyc/workspace/arceos/target/debug/deps/libos_str_bytes-96b7f1b43a5c022f.rlib: /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/lib.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/common/mod.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/common/raw.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/iter.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/pattern.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/raw_str.rs
+
+/Users/zedyc/workspace/arceos/target/debug/deps/os_str_bytes-96b7f1b43a5c022f.d: /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/lib.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/common/mod.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/common/raw.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/iter.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/pattern.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/raw_str.rs
+
+/Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/lib.rs:
+/Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/common/mod.rs:
+/Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/common/raw.rs:
+/Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/iter.rs:
+/Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/pattern.rs:
+/Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/os_str_bytes-6.4.1/src/raw_str.rs:

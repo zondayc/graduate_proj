@@ -1,0 +1,13 @@
+/Users/zedyc/workspace/arceos/target/debug/deps/quote-2eb6d8010a2121a5.rmeta: /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/lib.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/ext.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/format.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/ident_fragment.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/to_tokens.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/runtime.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/spanned.rs
+
+/Users/zedyc/workspace/arceos/target/debug/deps/libquote-2eb6d8010a2121a5.rlib: /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/lib.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/ext.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/format.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/ident_fragment.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/to_tokens.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/runtime.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/spanned.rs
+
+/Users/zedyc/workspace/arceos/target/debug/deps/quote-2eb6d8010a2121a5.d: /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/lib.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/ext.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/format.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/ident_fragment.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/to_tokens.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/runtime.rs /Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/spanned.rs
+
+/Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/lib.rs:
+/Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/ext.rs:
+/Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/format.rs:
+/Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/ident_fragment.rs:
+/Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/to_tokens.rs:
+/Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/runtime.rs:
+/Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.23/src/spanned.rs:

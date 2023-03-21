@@ -1,0 +1,41 @@
+Unsupported platform, use dummy config!
+Reading config file: src/defconfig.toml
+Reading config file: src/platform/dummy.toml
+{
+    "arch": String(
+        "unknown",
+    ),
+    "kernel-base-paddr": String(
+        "0",
+    ),
+    "kernel-base-vaddr": String(
+        "0",
+    ),
+    "mmio-regions": Array(
+        [],
+    ),
+    "phys-memory-base": String(
+        "0",
+    ),
+    "phys-memory-size": String(
+        "0",
+    ),
+    "phys-virt-offset": String(
+        "0",
+    ),
+    "platform": String(
+        "dummy",
+    ),
+    "task-stack-size": String(
+        "0x10000",
+    ),
+    "ticks-per-sec": String(
+        "100",
+    ),
+    "timer_frequency": String(
+        "0",
+    ),
+    "virtio-mmio-regions": Array(
+        [],
+    ),
+}

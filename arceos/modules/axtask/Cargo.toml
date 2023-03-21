@@ -1,0 +1,27 @@
+[package]
+name = "axtask"
+version = "0.1.0"
+edition = "2021"
+authors = ["Yuekai Jia <equation618@gmail.com>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+multitask = []  # without the feature, can still use the empty yield_now()
+
+sched_fifo = ["multitask"]
+sched_rr = ["multitask"]
+default = ["sched_fifo"]
+
+[dependencies]
+cfg-if = "1.0"
+log = "0.4"
+spin = "0.9"
+lazy_init = { path = "../../crates/lazy_init" }
+memory_addr = { path = "../../crates/memory_addr" }
+scheduler = { path = "../../crates/scheduler" }
+axconfig = { path = "../axconfig" }
+axhal = { path = "../axhal" }
+
+[dev-dependencies]
+spin = "0.9"
