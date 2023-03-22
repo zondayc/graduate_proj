@@ -76,6 +76,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "array-const-fn-init"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8bcb85e548c05d407fa6faff46b750ba287714ef32afc0f5e15b4641ffd6affb"
+
+[[package]]
+name = "array-macro"
+version = "2.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "457661fa6716c30b73d7c41400a8a78780d20523b83a9441dabec28e93f27cf4"
+
+[[package]]
 name = "atomic-polyfill"
 version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -109,7 +121,7 @@ dependencies = [
  "axerror",
  "log",
  "memory_addr",
- "spin",
+ "spin 0.9.5",
 ]
 
 [[package]]
@@ -156,6 +168,7 @@ dependencies = [
  "fatfs-shim",
  "lazy_init",
  "vfscore",
+ "xv6fs_shim",
 ]
 
 [[package]]
@@ -175,7 +188,7 @@ dependencies = [
  "ratio",
  "riscv",
  "sbi-rt",
- "spin",
+ "spin 0.9.5",
  "static_assertions",
  "tock-registers",
  "x86",
@@ -203,7 +216,7 @@ dependencies = [
  "lazy_init",
  "log",
  "smoltcp",
- "spin",
+ "spin 0.9.5",
 ]
 
 [[package]]
@@ -231,7 +244,7 @@ dependencies = [
  "log",
  "memory_addr",
  "scheduler",
- "spin",
+ "spin 0.9.5",
 ]
 
 [[package]]
@@ -260,7 +273,7 @@ version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43f9365b6b0c9e1663ca4ca9440c00eda46bc85a3407070be8b5e0d8d1f29629"
 dependencies = [
- "spin",
+ "spin 0.9.5",
 ]
 
 [[package]]
@@ -390,7 +403,7 @@ dependencies = [
  "driver_common",
  "driver_net",
  "log",
- "spin",
+ "spin 0.9.5",
  "virtio-drivers",
 ]
 
@@ -449,7 +462,7 @@ version = "0.1.0"
 dependencies = [
  "fatfs",
  "log",
- "spin",
+ "spin 0.9.5",
  "vfscore",
 ]
 
@@ -477,7 +490,7 @@ dependencies = [
  "atomic-polyfill",
  "hash32",
  "rustc_version",
- "spin",
+ "spin 0.9.5",
  "stable_deref_trait",
 ]
 
@@ -534,6 +547,15 @@ checksum = "fad582f4b9e86b6caa621cabeb0963332d92eea04729ab12892c2533951e6440"
 [[package]]
 name = "lazy_init"
 version = "0.1.0"
+
+[[package]]
+name = "lazy_static"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+dependencies = [
+ "spin 0.5.2",
+]
 
 [[package]]
 name = "libax"
@@ -838,6 +860,12 @@ dependencies = [
 
 [[package]]
 name = "spin"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
+
+[[package]]
+name = "spin"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7dccf47db1b41fa1573ed27ccf5e08e3ca771cb994f776668c5ebda893b248fc"
@@ -1097,6 +1125,26 @@ dependencies = [
  "bitflags",
  "rustversion",
  "volatile",
+]
+
+[[package]]
+name = "xv6fs"
+version = "0.1.0"
+dependencies = [
+ "array-const-fn-init",
+ "array-macro",
+ "bit_field",
+ "bitflags",
+ "lazy_static",
+ "spin 0.9.5",
+]
+
+[[package]]
+name = "xv6fs_shim"
+version = "0.1.0"
+dependencies = [
+ "vfscore",
+ "xv6fs",
 ]
 
 [[package]]

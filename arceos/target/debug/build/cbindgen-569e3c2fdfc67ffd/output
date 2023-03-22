@@ -1,1 +1,1 @@
-cargo:rerun-if-changed=/Users/zedyc/.cargo/registry/src/github.com-1ecc6299db9ec823/cbindgen-0.24.3/tests/rust
+cargo:rerun-if-changed=/Users/zedyc/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/cbindgen-0.24.3/tests/rust

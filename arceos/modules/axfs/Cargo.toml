@@ -9,6 +9,7 @@ edition = "2021"
 lazy_init = { path = "../../crates/lazy_init" }
 vfscore = { path = "../../crates/vfscore" }
 fatfs-shim = { path = "../../crates/fatfs-shim" }
+xv6fs_shim = {path="../../crates/xv6fs_shim"}
 axlog = { path = "../axlog" }
 axdriver = { path = "../axdriver", features = ["virtio-blk"]}
 driver_block = { path = "../../crates/driver_block" }

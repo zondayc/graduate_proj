@@ -122,7 +122,7 @@ impl InodeCache {
     /// If found, return an handle. 
     /// If not found, alloc an in-memory location in the cache, 
     /// but not fetch it from the disk yet. 
-    fn get(&self, dev: u32, inum: u32) -> Inode {
+    pub fn get(&self, dev: u32, inum: u32) -> Inode {
         let mut guard = self.meta.lock();
 
         // lookup in the cache 

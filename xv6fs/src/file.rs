@@ -1,3 +1,5 @@
+use crate::bitmap::inode_alloc;
+use crate::disk_inode::InodeType;
 use crate::fs_const::{ BSIZE, MAXOPBLOCKS };
 use crate::inode::ICACHE;
 use super::inode::Inode;
@@ -57,13 +59,13 @@ impl VFile {
     }
 
     ///addr is destination address 
-    pub fn read(
+    pub fn vfile_read(
         &self, 
         addr: usize,
         len: usize
     ) -> Result<usize, &'static str> {
         let ret;
-        if !self.readable() {
+        if !self.vfile_readable() {
             panic!("File can't be read!")
         }
 
@@ -94,13 +96,13 @@ impl VFile {
     /// Write to file f. 
     /// addr is a user virtual address
     /// addr is src address
-    pub fn write(
+    pub fn vfile_write(
         &self, 
         addr: usize, 
         len: usize
     ) -> Result<usize, &'static str> {
         let ret; 
-        if !self.writeable() {
+        if !self.vfile_writeable() {
             panic!("file can't be written")
         }
         
@@ -154,17 +156,17 @@ impl VFile {
 
     }
 
-    fn readable(&self) -> bool {
+    fn vfile_readable(&self) -> bool {
         self.readable
     }
 
-    fn writeable(&self) -> bool {
+    fn vfile_writeable(&self) -> bool {
         self.writeable
     }
 
     /// Get metadata about file f. 
     /// addr is a user virtual address, pointing to a struct stat. 
-    pub fn stat(&self) -> Result<Stat, &'static str> {
+    pub fn vfile_stat(&self) -> Result<Stat, &'static str> {
         let mut stat: Stat = Stat::new();
         match self.ftype {
             FileType::File|FileType::Directory => {
@@ -190,31 +192,26 @@ impl VFile {
         }
     }
 
-    pub fn is_dir(&self)->bool{
+    pub fn vfile_is_dir(&self)->bool{
         if self.ftype==FileType::Directory{
             return true;
         }
         false
     }
 
-    pub fn is_file(&self)->bool{
+    pub fn vfile_is_file(&self)->bool{
         if self.ftype==FileType::File{
             return true;
         }
         false
     }
 
-    pub fn open(path:&str,readable:bool,writeable:bool)->Option<Self>{
+    pub fn vfile_open(path:&str,readable:bool,writeable:bool)->Option<Self>{
         let inode=ICACHE.create(path.as_bytes(),crate::disk_inode::InodeType::File, 2, 1).unwrap();
         Some(Self { ftype: FileType::File, readable, writeable, inode:Some(inode), offset:0, major:2})
     }
 
-    pub fn mkdir(path:&str)->Option<Self>{
-        let inode=ICACHE.create(path.as_bytes(),crate::disk_inode::InodeType::Directory, 2, 1).unwrap();
-        Some(Self { ftype: FileType::Directory, readable:true, writeable:true, inode:Some(inode), offset:0, major:2})
-    }
-
-    pub fn readdir(&self)->Option<Vec<String>>{
+    pub fn vfile_readdir(&self)->Option<Vec<String>>{
         if self.ftype!=FileType::Directory{
             panic!("this is not a directory!");
         }
@@ -222,8 +219,39 @@ impl VFile {
         inode_data.ls()
     }
 
-    pub fn remove(path:&str){
+    pub fn vfile_remove(&self,path:&str){
         ICACHE.remove(path.as_bytes());
+    }
+
+    pub fn vfile_create(&self,path:&str,itype:InodeType)->Self{
+        let self_inode=self.inode.as_ref().unwrap();
+        let mut self_idata=self_inode.lock();
+        let dev=self_inode.dev;
+        let inum=inode_alloc(dev,itype);
+        let inode=ICACHE.get(dev, inum);
+        let mut idata=inode.lock();
+        idata.dinode.major=2;
+        idata.dinode.minor=1;
+        idata.dinode.nlink=1;
+        idata.update();
+        let mut ftype=FileType::File;
+        if itype==InodeType::Directory{
+            ftype=FileType::Directory;
+            idata.dinode.nlink+=1;
+            idata.update();
+            idata.dir_link(".".as_bytes(), inum);
+            idata.dir_link("..".as_bytes(), self_inode.inum);
+        }
+        self_idata.dir_link(path.as_bytes(), self_inode.inum).expect("parent inode fail to link");
+        drop(idata);
+        drop(self_idata);
+        VFile { ftype, readable:true, writeable:true, inode:Some(inode), offset:0, major:2}
+    }
+
+    pub fn vfile_size(&self)->usize{
+        let inode=self.inode.as_ref().unwrap();
+        let idata=inode.lock();
+        idata.dinode.size as usize
     }
 }
 
