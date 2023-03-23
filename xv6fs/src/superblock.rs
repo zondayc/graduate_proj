@@ -1,4 +1,9 @@
 //! Super block operations
+#[cfg(not(test))]
+use axlog::{info, warn}; // Use log crate when building application
+ 
+#[cfg(test)]
+use std::{println as info, println as warn}; // Workaround to use prinltn! for logs.
 
 use core::ptr;
 use core::mem::{self, MaybeUninit};
@@ -39,16 +44,16 @@ impl SuperBlock {
             self.data.as_mut_ptr(),
             1,
         );
-        //println!("check magic number");
+        //info!("check magic number");
         if self.data.as_ptr().as_ref().unwrap().magic != FSMAGIC {
             panic!("invalid file system magic num");
         }
-        println!("superblock init data {:?}",self.data.as_ptr().as_ref().unwrap());
+        info!("superblock init data {:?}",self.data.as_ptr().as_ref().unwrap());
         self.initialized.store(true, Ordering::SeqCst);
         drop(buf);
 
         #[cfg(feature = "verbose_init_info")]
-        println!("super block data: {:?}", self.data.as_ptr().as_ref().unwrap());
+        info!("super block data: {:?}", self.data.as_ptr().as_ref().unwrap());
     }
 
     /// Read the info of super block.
@@ -97,9 +102,9 @@ impl SuperBlock {
         if inum >= sb.ninodes {
             panic!("query inum {} larger than maximum inode nums {}", inum, sb.ninodes);
         }
-        // println!("[Debug] inum: {}", inum);
+        // info!("[Debug] inum: {}", inum);
         let blockno = (inum / (IPB as u32)) + sb.inodestart;
-        // println!("[Debug] block number: {}", blockno);
+        // info!("[Debug] block number: {}", blockno);
         blockno
     }
 

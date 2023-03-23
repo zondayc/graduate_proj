@@ -1,4 +1,11 @@
-//#![no_std]
+
+#![cfg_attr(not(test), no_std)]
+
+#[cfg(not(test))]
+use axlog::{info, warn}; // Use log crate when building application
+ 
+#[cfg(test)]
+use std::{println as info, println as warn}; // Workaround to use prinltn! for logs.
 
 extern crate alloc;
 
@@ -18,7 +25,6 @@ pub mod sync;
 pub mod xv6fs;
 
 use core::ops::DerefMut;
-use std::println;
 
 use alloc::sync::Arc;
 pub use block_dev::BlockDevice;
@@ -35,5 +41,5 @@ pub unsafe fn init(block_dev:Arc<dyn BlockDevice>,dev:u32) {
     SUPER_BLOCK.init(dev);
     let log=LOG_MANAGER.log.lock().deref_mut() as *mut Log;
     log.as_mut().unwrap().init(dev);
-    println!("file system: setup done!");
+    info!("file system: setup done!");
 }

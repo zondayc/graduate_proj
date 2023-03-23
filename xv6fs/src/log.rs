@@ -1,4 +1,9 @@
 //! Log-relevant operations
+#[cfg(not(test))]
+use axlog::{info, warn}; // Use log crate when building application
+ 
+#[cfg(test)]
+use std::{println as info, println as warn}; // Workaround to use prinltn! for logs.
 
 //use core::{ops::{Deref, DerefMut}, panic, ptr};
 use core::{ panic, ptr};
@@ -69,14 +74,14 @@ impl Log {
 
     /// Recover the file system from log if necessary.
     fn recover(&mut self) {
-        //println!("file system: checking logs");
+        //info!("file system: checking logs");
         self.read_head();
         if self.lh.len > 0 {
-            //println!("file system: recovering from logs");
+            //info!("file system: recovering from logs");
             self.install_trans(true);
             self.empty_head();
         } else {
-            //println!("file system: no need to recover");
+            //info!("file system: no need to recover");
         }
     }
 
@@ -133,7 +138,7 @@ impl Log {
             }
             disk_buf.bwrite();
             if !recovering {
-                println!("unpin disk buf {}",self.lh.blocknos[i as usize]);
+                info!("unpin disk buf {}",self.lh.blocknos[i as usize]);
                 unsafe { disk_buf.unpin(); }
             }
             drop(log_buf);
@@ -213,7 +218,7 @@ impl LogManager {
         // record the buf's blockno in the log header
         for i in 0..guard.lh.len {
             if guard.lh.blocknos[i as usize] == buf.read_blockno() {
-                println!("buf blockno {} is in the lh.blocknos, and now len is {}",guard.lh.blocknos[i as usize],guard.lh.len);
+                info!("buf blockno {} is in the lh.blocknos, and now len is {}",guard.lh.blocknos[i as usize],guard.lh.len);
                 drop(guard);
                 drop(buf);
                 return;
@@ -226,7 +231,7 @@ impl LogManager {
         let len = guard.lh.len as usize;
         guard.lh.blocknos[len] = buf.read_blockno();
         guard.lh.len += 1;
-        println!("insert blockno {},Log Header len +1, and now len is {}",buf.read_blockno(),guard.lh.len);
+        info!("insert blockno {},Log Header len +1, and now len is {}",buf.read_blockno(),guard.lh.len);
         drop(guard);
         drop(buf);
     }

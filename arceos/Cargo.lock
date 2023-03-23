@@ -168,6 +168,7 @@ dependencies = [
  "fatfs-shim",
  "lazy_init",
  "vfscore",
+ "xv6fs",
  "xv6fs_shim",
 ]
 
@@ -1133,6 +1134,7 @@ version = "0.1.0"
 dependencies = [
  "array-const-fn-init",
  "array-macro",
+ "axlog",
  "bit_field",
  "bitflags",
  "lazy_static",

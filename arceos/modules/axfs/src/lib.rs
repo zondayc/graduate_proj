@@ -12,6 +12,8 @@ use alloc::{sync::Arc, vec::Vec};
 use axdriver::block_devices;
 use driver_block::BlockDriverOps;
 use fatfs_shim::Fat32FileSystem;
+use xv6fs_shim::{VXV6FS};
+use xv6fs::BlockDevice;
 use lazy_init::LazyInit;
 use vfscore::{DiskOperation, VfsFileSystem};
 
@@ -56,6 +58,23 @@ pub fn init_filesystems() {
     MOUNTEDFS.init_by(mounted_list)
 }
 
+pub fn init_xv6fs() {
+    info!("init xv6fs");
+    let xfs=Arc::new(VXV6FS::new());
+    unsafe{xv6fs::init(Arc::new(DiskOps), 0);}
+
+    // init filesystem list
+    let mut fs_list = FileSystemList::new();
+    fs_list.add(xfs.clone());
+    FILESTSTEMS.init_by(fs_list);
+
+    // init mounted filesystem list
+    let mut mounted_list = MountedFsList::new();
+    mounted_list.mount("/", xfs.clone());
+    MOUNTEDFS.init_by(mounted_list)
+
+}
+
 pub struct DiskOps;
 
 impl DiskOperation for DiskOps {
@@ -67,6 +86,22 @@ impl DiskOperation for DiskOps {
     }
 
     fn write_block(index: usize, data: &[u8]) {
+        block_devices()
+            .0
+            .write_block(index, data)
+            .expect("can't write block");
+    }
+}
+
+impl BlockDevice for DiskOps {
+    fn read_block(&self,index: usize, buf: &mut [u8]) {
+        block_devices()
+            .0
+            .read_block(index, buf)
+            .expect("can't read block");
+    }
+
+    fn write_block(&self,index: usize, data: &[u8]) {
         block_devices()
             .0
             .write_block(index, data)

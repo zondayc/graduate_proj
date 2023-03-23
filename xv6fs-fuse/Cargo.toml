@@ -8,4 +8,5 @@ edition = "2021"
 [dependencies]
 clap = "2.33.3"
 xv6fs = { path = "../xv6fs" }
+axlog={path="../arceos/modules/axlog"}
 rand = "0.8.0"

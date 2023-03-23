@@ -4,6 +4,7 @@ use alloc::sync::Arc;
 
 use crate::BlockDevice;
 use crate::disk_inode::{DirEntry,DiskInode, InodeType};
+use crate::file::{VFile,FileType};
 use crate::inode::{ICACHE,Inode};
 use crate::misc::mem_set;
 use crate::superblock::RawSuperBlock;
@@ -103,6 +104,23 @@ impl Xv6FileSystem {
         ICACHE.get_root_dir()
     }
 
+    pub fn get_root_vfile(&self)->VFile{
+        let inode=ICACHE.get_root_dir();
+        let idata=inode.lock();
+        let mut ftype=FileType::File;
+        if idata.dinode.itype==InodeType::Directory{
+            ftype=FileType::Directory;
+        }
+        drop(idata);
+        VFile { 
+            ftype,
+            readable:true, 
+            writeable:true, 
+            inode:Some(inode), 
+            offset:0,
+            major:2 
+        }
+    }
     
 
 }

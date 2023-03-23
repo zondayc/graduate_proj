@@ -1,5 +1,8 @@
-use xv6fs::{file::VFile,disk_inode::InodeType};
-use vfscore::{VfsFile,SeekFrom};
+#![no_std]
+use xv6fs::{file::{VFile,FileType},disk_inode::InodeType,xv6fs::Xv6FileSystem, BlockDevice};
+use vfscore::{VfsFile,SeekFrom,VfsFileSystem};
+extern crate alloc;
+use alloc::{boxed::Box,vec::Vec,string::String};
 
 pub struct vfsFile{
     vfile:VFile,
@@ -21,14 +24,13 @@ impl VfsFile for vfsFile {
         self.vfile.vfile_readdir().unwrap()
     }
     fn read(&self, buf: &mut [u8]) -> usize{
-        
-        self.vfile.vfile_read(buf, len).unwrap()
+        self.vfile.vfile_read(buf.as_mut_ptr() as usize, buf.len()).unwrap()
     }
     fn write(&self, data: &[u8]) -> usize{
-
+        self.vfile.vfile_write(data.as_ptr() as usize, data.len()).unwrap()
     }
     fn seek(&self, seek: SeekFrom) -> usize{
-
+        0
     }
     fn is_dir(&self) -> bool{
         self.vfile.vfile_is_dir()
@@ -46,3 +48,26 @@ impl VfsFile for vfsFile {
         self.vfile.vfile_size()
     }
 }
+
+pub struct VXV6FS{
+    pub fs:Xv6FileSystem,
+}
+
+impl VfsFileSystem for VXV6FS{
+    fn name(&self) -> &str{
+        "xv6-log-fs"
+    }
+    fn root(&'static self) -> Box<dyn VfsFile>{
+        let vfile=self.fs.get_root_vfile();
+        Box::new(vfsFile{vfile})
+    }
+}
+
+impl VXV6FS {
+    pub fn new()->Self{
+        Self { fs: Xv6FileSystem::new() }
+    }
+}
+
+
+

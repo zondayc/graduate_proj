@@ -1,5 +1,11 @@
 //! buffer cache layer
 
+#[cfg(not(test))]
+use axlog::{info, warn}; // Use log crate when building application
+ 
+#[cfg(test)]
+use std::{println as info, println as warn}; // Workaround to use prinltn! for logs.
+
 use array_macro::array;
 
 use core::ptr;
@@ -119,11 +125,11 @@ impl BlockCacheManager {
 
      /// Get the buf from the cache/disk(block device)
      pub fn bread<'a>(&'a self, dev: u32, block_id: u32) -> Buf<'a> {
-        //println!("block id is {}",block_id);
+        //info!("block id is {}",block_id);
         let inner=self.inner.exclusive_access();
         let mut b = self.bget(Arc::clone(&inner.block_device), dev, block_id);
         if !self.bufs[b.index].valid.load(Ordering::Relaxed) {
-            println!("not find block {} in cache!",block_id);
+            info!("not find block {} in cache!",block_id);
             inner.block_device.read_block(block_id as usize, b.data.as_mut().unwrap().0.as_mut());
             self.bufs[b.index].valid.store(true, Ordering::Relaxed);
         }
@@ -178,13 +184,13 @@ impl<'a> Buf<'a> {
     pub unsafe fn pin(&self) {
         let rc = *self.rc_ptr;
         *self.rc_ptr = rc + 1;
-        println!("buf {} rc +1 = {}",self.block_id,*self.rc_ptr);
+        info!("buf {} rc +1 = {}",self.block_id,*self.rc_ptr);
     }
 
     /// Unpin the buf.
     /// SAFETY: it should be called matching pin.
     pub unsafe fn unpin(&self) {
-        println!("buf {} rc = {}",self.block_id,*self.rc_ptr);
+        info!("buf {} rc = {}",self.block_id,*self.rc_ptr);
         let rc = *self.rc_ptr;
         if rc <= 1 {
             panic!("buf unpin not match");

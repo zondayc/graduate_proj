@@ -1,10 +1,12 @@
 use crate::bitmap::inode_alloc;
 use crate::disk_inode::InodeType;
 use crate::fs_const::{ BSIZE, MAXOPBLOCKS };
-use crate::inode::ICACHE;
+use crate::inode::{ICACHE, self};
 use super::inode::Inode;
 use super::stat::Stat;
 use crate::log::LOG_MANAGER;
+use alloc::vec::Vec;
+use alloc::string::String;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(u16)]
@@ -173,13 +175,13 @@ impl VFile {
                 let inode = self.inode.as_ref().unwrap();
                 
                 #[cfg(feature = "debug")]
-                println!("[Kernel] stat: inode index: {}, dev: {}, inum: {}", inode.index, inode.dev, inode.inum);
+                info!("[Kernel] stat: inode index: {}, dev: {}, inum: {}", inode.index, inode.dev, inode.inum);
 
                 let inode_guard = inode.lock();
                 inode_guard.stat(&mut stat);
                 drop(inode_guard);
                 
-                // println!(
+                // info!(
                 //     "[Kernel] stat: dev: {}, inum: {}, nlink: {}, size: {}, type: {:?}", 
                 //     stat.dev, stat.inum, stat.nlink, stat.size, stat.itype
                 // );

@@ -1,4 +1,9 @@
-use clap::{App, Arg};
+#[cfg(not(test))] 
+use axlog::{info, warn}; // Use log crate when building application
+ 
+#[cfg(test)]
+use std::{println as info}; // Workaround to use prinltn! for logs.use clap::{App, Arg};
+
 use xv6fs::bitmap::bfree;
 use xv6fs::fs_const::BSIZE;
 use xv6fs::inode::ICACHE;
@@ -19,12 +24,12 @@ struct BlockFile(Mutex<File>);
 impl BlockDevice for BlockFile {
     /// Read a block from file
     fn read_block(&self, block_id: usize, buf: &mut [u8]) {
-        println!("read block {}",block_id);
+        info!("read block {}",block_id);
         let mut file = self.0.lock().unwrap();
         file.seek(SeekFrom::Start((block_id * BLOCK_SZ) as u64))
             .expect("Error when seeking!");
         assert_eq!(file.read(buf).unwrap(), BLOCK_SZ, "Not a complete block!");
-        //println!("read block {} buf {:?}",block_id,buf);
+        //info!("read block {} buf {:?}",block_id,buf);
     }
     /// Write a block into file
     fn write_block(&self, block_id: usize, buf: &[u8]) {
@@ -32,7 +37,7 @@ impl BlockDevice for BlockFile {
         file.seek(SeekFrom::Start((block_id * BLOCK_SZ) as u64))
             .expect("Error when seeking!");
         assert_eq!(file.write(buf).unwrap(), BLOCK_SZ, "Not a complete block!");
-        //println!("write block {} with buf {:?}",block_id,buf);
+        //info!("write block {} with buf {:?}",block_id,buf);
     }
 }
 
@@ -51,16 +56,16 @@ fn xv6fs_test_create() -> std::io::Result<()> {
         f.set_len((BLOCK_NUM * BLOCK_SZ) as u64).unwrap();
         f
     })));
-    println!("block size:{}, disk inode size:{}, log header size:{}",BSIZE,size_of::<DiskInode>(),size_of::<LogHeader>());
+    info!("block size:{}, disk inode size:{}, log header size:{}",BSIZE,size_of::<DiskInode>(),size_of::<LogHeader>());
     let mut xfs=Xv6FileSystem::new();
     //xfs.create(block_file.clone());
     unsafe{xv6fs::init(block_file.clone(), 1);}
     let root_inode=xfs.get_root_inode();
-    println!("root inode is {:?}",root_inode);
+    info!("root inode is {:?}",root_inode);
     let mut root_data=root_inode.lock();
-    println!("root get locked");
+    info!("root get locked");
     let dir_list=root_data.ls().unwrap();
-    println!("{:?}",dir_list);
+    info!("{:?}",dir_list);
     drop(root_data);
     let path:&[u8]=b"/test\0\0\0";
     let path2:&[u8]=b"/test1\0\0";
@@ -74,11 +79,11 @@ fn xv6fs_test_create() -> std::io::Result<()> {
     let mut test_inode5=ICACHE.create(path5,xv6fs::disk_inode::InodeType::File, 2, 1).unwrap();
     let mut root_data=root_inode.lock();
     let dir_list=root_data.ls().unwrap();
-    println!("{:?}",dir_list);
+    info!("{:?}",dir_list);
     drop(root_data);
     let mut test_data=test_inode4.lock();
     let dir_list=test_data.ls().unwrap();
-    println!("{:?}",dir_list);
+    info!("{:?}",dir_list);
     LOG_MANAGER.commit_log();
     Ok(())
 }
@@ -94,19 +99,19 @@ fn xv6fs_log_delete() -> std::io::Result<()> {
         f.set_len((BLOCK_NUM * BLOCK_SZ) as u64).unwrap();
         f
     })));
-    println!("block size:{}, disk inode size:{}, log header size:{}",BSIZE,size_of::<DiskInode>(),size_of::<LogHeader>());
+    info!("block size:{}, disk inode size:{}, log header size:{}",BSIZE,size_of::<DiskInode>(),size_of::<LogHeader>());
     let mut xfs=Xv6FileSystem::new();
     //xfs.create(block_file.clone());
     unsafe{xv6fs::init(block_file.clone(), 1);}
     let root_inode=xfs.get_root_inode();
-    //println!("root inode is {:?}",root_inode);
+    //info!("root inode is {:?}",root_inode);
     let mut root_data=root_inode.lock();
     let dir_list=root_data.ls().unwrap();
-    println!("{:?}",dir_list);
+    info!("{:?}",dir_list);
     drop(root_data);
     let mut buf = BLOCK_CACHE_MANAGER.bread(0, 2);
     let raw_lh = buf.raw_data_mut() as *mut LogHeader;
-    println!("log header is {:?}",unsafe{raw_lh.as_ref().unwrap()});
+    info!("log header is {:?}",unsafe{raw_lh.as_ref().unwrap()});
     Ok(())
 }
 
@@ -148,10 +153,10 @@ fn xv6fs_ls_root() -> std::io::Result<()> {
     let mut xfs=Xv6FileSystem::new();
     unsafe{xv6fs::init(block_file.clone(), 1);}
     let root_inode=xfs.get_root_inode();
-    //println!("root inode is {:?}",root_inode);
+    //info!("root inode is {:?}",root_inode);
     let mut root_data=root_inode.lock();
     let dir_list=root_data.ls().unwrap();
-    println!("{:?}",dir_list);
+    info!("{:?}",dir_list);
     drop(root_data);
     Ok(())
 }
@@ -167,7 +172,7 @@ fn xv6fs_test_read() -> std::io::Result<()> {
         f.set_len((BLOCK_NUM * BLOCK_SZ) as u64).unwrap();
         f
     })));
-    println!("block size:{}, disk inode size:{}, log header size:{}",BSIZE,size_of::<DiskInode>(),size_of::<LogHeader>());
+    info!("block size:{}, disk inode size:{}, log header size:{}",BSIZE,size_of::<DiskInode>(),size_of::<LogHeader>());
     let mut xfs=Xv6FileSystem::new();
     //xfs.create(block_file.clone());
     unsafe{xv6fs::init(block_file.clone(), 1);}
@@ -178,7 +183,7 @@ fn xv6fs_test_read() -> std::io::Result<()> {
     inode_data.read(buf.as_mut_ptr() as usize, 0, 6);
     drop(inode_data);
     drop(inode);
-    println!("buf is {:?}",String::from_utf8(buf.to_vec()).unwrap());
+    info!("buf is {:?}",String::from_utf8(buf.to_vec()).unwrap());
     Ok(())
     //获取root节点,ok
     //写入文件,ok
@@ -231,7 +236,7 @@ fn xv6fs_test_remove()->std::io::Result<()> {
     let mut rdata=rinode.lock();
     //rdata.dir_unlink(path);
     let dir_list=rdata.ls().unwrap();
-    println!("{:?}",dir_list);
+    info!("{:?}",dir_list);
     drop(rdata);
     drop(rinode);
     LOG_MANAGER.commit_log();
@@ -258,7 +263,7 @@ fn xv6fs_test_remove_dir()->std::io::Result<()> {
     let mut rdata=rinode.lock();
     //rdata.dir_unlink(path);
     let dir_list=rdata.ls().unwrap();
-    println!("{:?}",dir_list);
+    info!("{:?}",dir_list);
     drop(rdata);
     drop(rinode);
     LOG_MANAGER.commit_log();

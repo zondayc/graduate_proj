@@ -1,3 +1,9 @@
+#[cfg(not(test))]
+use axlog::{info, warn}; // Use log crate when building application
+ 
+#[cfg(test)]
+use std::{println as info, println as warn}; // Workaround to use prinltn! for logs.
+
 use bit_field::BitField;
 
 use crate::superblock::SUPER_BLOCK;
@@ -54,11 +60,11 @@ pub fn balloc(dev: u32) -> u32 {
             let m = 1 << (bi % 8);
             let buf_ptr = unsafe{ (buf.raw_data_mut() as *mut u8).offset((bi / 8) as isize).as_mut().unwrap() };
             let buf_val = unsafe{ ptr::read(buf_ptr) };
-            //println!("bval is {}",buf_val);
+            //info!("bval is {}",buf_val);
             if (buf_val&m) == 0{ // Is block free?
                 let new_val:u8=buf_val|m;
                 unsafe{ ptr::write(buf_ptr, new_val) };
-                //println!("balloc: inum is {}",bi);
+                //info!("balloc: inum is {}",bi);
                 LOG_MANAGER.write(buf);
                 // drop(buf);
                 // bzero(dev, b + bi);
@@ -78,14 +84,14 @@ pub fn bfree(devno:u32,blockno:u32)->Result<(),&'static str>{
     let offset=blockno/8;
     let buf_ptr=unsafe {(buf.raw_data_mut() as *mut u8).offset(offset as isize).as_mut().unwrap()};
     let buf_val=unsafe {ptr::read(buf_ptr)};
-    println!("buf val is {}",buf_val);
+    info!("buf val is {}",buf_val);
     if buf_val&(1<<bi)==0{
         panic!("this bit is not alloc yet");
     }
     let new_val=buf_val^(1<<bi);
-    println!("new val is {}",new_val);
+    info!("new val is {}",new_val);
     unsafe{ptr::write(buf_ptr, new_val)};
-    //unsafe{println!("buf is {:?}",buf.raw_data().as_ref().unwrap())};
+    //unsafe{info!("buf is {:?}",buf.raw_data().as_ref().unwrap())};
     LOG_MANAGER.write(buf);
     Ok(())
 }
@@ -99,9 +105,9 @@ pub fn inode_alloc(dev: u32, itype: InodeType) -> u32 {
         let dinode = unsafe { (buf.raw_data_mut() as *mut DiskInode).offset(offset) };
         let dinode = unsafe { &mut *dinode };
         if dinode.try_alloc(itype).is_ok() {
-            println!("inode alloc: inum is {} and offset is {}",inum,offset);
+            info!("inode alloc: inum is {} and offset is {}",inum,offset);
             LOG_MANAGER.write(buf);
-            println!("inum is {}",inum);
+            info!("inum is {}",inum);
             return inum
         }
     }

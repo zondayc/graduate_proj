@@ -13,4 +13,5 @@ xv6fs_shim = {path="../../crates/xv6fs_shim"}
 axlog = { path = "../axlog" }
 axdriver = { path = "../axdriver", features = ["virtio-blk"]}
 driver_block = { path = "../../crates/driver_block" }
+xv6fs={path="../../../xv6fs"}
 # driver_virtio = { path ="../../crates/driver_virtio" }

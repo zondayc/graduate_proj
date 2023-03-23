@@ -1,3 +1,9 @@
+#[cfg(not(test))]
+use axlog::{info, warn}; // Use log crate when building application
+ 
+#[cfg(test)]
+use std::{println as info, println as warn}; // Workaround to use prinltn! for logs.
+
 use crate::fs_const::{BSIZE, DIRSIZ, IPB, NDIRECT, NINDIRECT, NINODE, ROOTDEV, ROOTINUM};
 use crate::log::LOG_MANAGER;
 use crate::bitmap::{inode_alloc};
@@ -9,7 +15,6 @@ use spin::{Mutex,MutexGuard};
 use core::mem::size_of;
 use core::ptr::{self, read, write};
 use core::str;
-use std::slice::SplitInclusiveMut;
 
 use array_macro::array;
 
@@ -18,7 +23,7 @@ use crate::superblock::{SUPER_BLOCK, RawSuperBlock};
 use super::stat::Stat;
 use crate::disk_inode::{ InodeType, DiskInode, DirEntry };
 use super::bitmap::{balloc, bfree};
-use alloc::vec::Vec;
+use alloc::{vec::Vec,string::String};
 
 pub static ICACHE: InodeCache = InodeCache::new();
 
@@ -130,7 +135,7 @@ impl InodeCache {
         for i in 0..NINODE {
             if guard[i].inum == inum && guard[i].refs > 0 && guard[i].dev == dev {
                 guard[i].refs += 1;
-                // println!("[Debug] 获取Inode");
+                // info!("[Debug] 获取Inode");
                 return Inode {
                     dev,
                     inum,
@@ -170,7 +175,7 @@ impl InodeCache {
         let mut inode: Inode;
         if path[0] == b'/' {
             inode = self.get(ROOTDEV, ROOTINUM);
-            println!("path 0 is /");
+            info!("path 0 is /");
         } else {
             //这里是要获取当前目录的名称
             inode=self.dup(INTERFACE_MANAGER.lock().interface.as_ref().get_cur_dir_inode().as_ref().unwrap());
@@ -179,9 +184,9 @@ impl InodeCache {
         loop {
             cur = skip_path(path, cur, name);//这里name获取了/后面的第一个路径名
             if cur == 0 { break; }
-            println!("cur is {:?}, and name is {:?}",cur,String::from_utf8(name.to_vec()).unwrap());
+            info!("cur is {:?}, and name is {:?}",cur,String::from_utf8(name.to_vec()).unwrap());
             let mut data_guard = inode.lock();
-            println!("acquire lock");
+            info!("acquire lock");
             if data_guard.dinode.itype != InodeType::Directory {
                 drop(data_guard);
                 return None
@@ -194,7 +199,7 @@ impl InodeCache {
             match data_guard.dir_lookup(name) {
                 None => {
                     drop(data_guard);
-                    // println!("[Kernel] name: {}", String::from_utf8(name.to_vec()).unwrap());
+                    // info!("[Kernel] name: {}", String::from_utf8(name.to_vec()).unwrap());
                     return None
                 },
                 Some(last_inode) => {
@@ -206,7 +211,7 @@ impl InodeCache {
         }
         if is_parent {
             // only when querying root inode's parent 
-            //println!("[Kernel] Warning: namex querying root inode's parent");
+            //info!("[Kernel] Warning: namex querying root inode's parent");
             None 
         } else {
             Some(inode)
@@ -235,9 +240,9 @@ impl InodeCache {
         major: i16,
         minor: i16
     ) -> Result<Inode, &'static str> {
-        // println!("[Kernel] create: path: {}", String::from_utf8(path.to_vec()).unwrap());
+        // info!("[Kernel] create: path: {}", String::from_utf8(path.to_vec()).unwrap());
         let mut name: [u8; DIRSIZ] = [0; DIRSIZ];
-        println!("name is {:?} as {:?}",&name,String::from_utf8(name.to_vec()));
+        info!("name is {:?} as {:?}",&name,String::from_utf8(name.to_vec()));
         let dirinode = self.namei_parent(path, &mut name).unwrap();
         let mut dirinode_guard = dirinode.lock();
         match dirinode_guard.dir_lookup(&name) {
@@ -298,10 +303,10 @@ impl InodeCache {
     }
 
     pub fn remove(&self,path: &[u8])->Result<(),&'static str>{
-        println!("begin remove");
+        info!("begin remove");
         let mut name: [u8; DIRSIZ] = [0; DIRSIZ];
         let dirinode = self.namei_parent(path, &mut name).unwrap();
-        println!("name is {:?} as {:?}",&name,String::from_utf8(name.to_vec()));
+        info!("name is {:?} as {:?}",&name,String::from_utf8(name.to_vec()));
         let mut dirinode_guard = dirinode.lock();
         match dirinode_guard.dir_lookup(&name) {
             Some(inode) => {
@@ -462,7 +467,7 @@ impl InodeData {
     /// Update a modified in-memory inode to disk. 
     /// Typically called after changing the content of inode info. 
     pub fn update(&mut self) {
-        println!("begin update");
+        info!("begin update");
         let mut buf = BLOCK_CACHE_MANAGER.bread(
             self.dev, 
             unsafe { SUPER_BLOCK.locate_inode(self.inum)}
@@ -470,7 +475,7 @@ impl InodeData {
         let offset = locate_inode_offset(self.inum) as isize;
         let dinode = unsafe{ (buf.raw_data_mut() as *mut DiskInode).offset(offset) };
         unsafe{ write(dinode, self.dinode) };
-        println!("update: self.dindoe: {:?}", self.dinode);
+        info!("update: self.dindoe: {:?}", self.dinode);
         LOG_MANAGER.write(buf);
     }
 
@@ -533,7 +538,7 @@ impl InodeData {
         // Check the reading content is in range.
         let end = offset.checked_add(count).ok_or("Fail to add count.")?;
         if end > self.dinode.size {
-            // println!("[Kernel] read: end: {}, dinode.size: {}", end, self.dinode.size);
+            // info!("[Kernel] read: end: {}, dinode.size: {}", end, self.dinode.size);
             return Err("inode read: end is more than diskinode's size.")
         }
 
@@ -585,10 +590,10 @@ impl InodeData {
     ) -> Result<usize, &'static str> {
         // let end = offset.checked_add(count).ok_or("Fail to add count.")?;
         // if end > self.dinode.size {
-        //     println!("[Kernel] write: end: {}, dinode.size: {}", end, self.dinode.size);
+        //     info!("[Kernel] write: end: {}, dinode.size: {}", end, self.dinode.size);
         //     return Err("inode write: end is more than diskinode's size.")
         // }
-        println!("begin inode write");
+        info!("begin inode write");
         let mut offset = offset as usize;
         let count = count as usize;
         let mut total = 0;
@@ -610,11 +615,11 @@ impl InodeData {
             // }
             let dst=unsafe{ (buf.raw_data_mut() as *mut u8).offset((offset % BSIZE) as isize ) };
             let bufdata=buf.raw_data();
-            //unsafe{println!("buf is {:?}",*bufdata);}
+            //unsafe{info!("buf is {:?}",*bufdata);}
             drop(bufdata);
             unsafe{ptr::copy(src as *const u8, dst, write_len);}
             let bufdata=buf.raw_data();
-            //unsafe{println!("buf is {:?}",*bufdata);}
+            //unsafe{info!("buf is {:?}",*bufdata);}
             drop(bufdata);
             offset += write_len;
             src += write_len;
@@ -622,10 +627,10 @@ impl InodeData {
 
             block_basic = offset / BSIZE;
             block_offset = offset % BSIZE;
-            println!("write buf on offset {}",offset);
+            info!("write buf on offset {}",offset);
             LOG_MANAGER.write(buf);
-            // println!("[Kernel] Write Once");
-            // println!("[Kernel] total: {}, count: {}", total, count);
+            // info!("[Kernel] Write Once");
+            // info!("[Kernel] total: {}, count: {}", total, count);
         }
 
         if self.dinode.size < offset as u32 {
@@ -634,7 +639,7 @@ impl InodeData {
 
         self.update();
         
-        // println!("[Kernel] Write end");
+        // info!("[Kernel] Write end");
         Ok(total)
     }
 
@@ -657,7 +662,7 @@ impl InodeData {
             if dir_entry.inum == 0 {
                 continue;
             }
-            // println!("dir_entry_name: {}, name: {}", String::from_utf8(dir_entry.name.to_vec()).unwrap(), String::from_utf8(name.to_vec()).unwrap());
+            // info!("dir_entry_name: {}, name: {}", String::from_utf8(dir_entry.name.to_vec()).unwrap(), String::from_utf8(name.to_vec()).unwrap());
             for i in 0..DIRSIZ {
                 if dir_entry.name[i] != name[i] {
                     break;
@@ -672,7 +677,7 @@ impl InodeData {
 
     /// Write s new directory entry (name, inum) into the directory
     pub fn dir_link(&mut self, name: &[u8], inum: u32) -> Result<(), &'static str>{
-        println!("dir link {:?}",String::from_utf8(name.to_vec()).unwrap());
+        info!("dir link {:?}",String::from_utf8(name.to_vec()).unwrap());
         if self.dir_lookup(name).is_some() {
             return Err("It's incorrect to find entry in disk")
         }
@@ -680,13 +685,13 @@ impl InodeData {
         // look for an empty dir_entry
         let mut entry_offset = 0;
         for offset in (0..self.dinode.size).step_by(size_of::<DirEntry>()) {
-            println!("dir link begin read dir entry");
+            info!("dir link begin read dir entry");
             self.read(
                 (&mut dir_entry) as *mut DirEntry as usize, 
                 offset, 
                 size_of::<DirEntry>() as u32
             )?;
-            println!("read entry is {:?}",dir_entry);
+            info!("read entry is {:?}",dir_entry);
             if dir_entry.inum == 0 {
                 break;
             }
@@ -746,7 +751,7 @@ impl InodeData {
                if dir_entry.inum == 0 {
                    continue;
                }
-               // println!("dir_entry_name: {}, name: {}", String::from_utf8(dir_entry.name.to_vec()).unwrap(), String::from_utf8(name.to_vec()).unwrap());
+               // info!("dir_entry_name: {}, name: {}", String::from_utf8(dir_entry.name.to_vec()).unwrap(), String::from_utf8(name.to_vec()).unwrap());
                let name=String::from_utf8(dir_entry.name.to_vec()).unwrap();
                v.push(name);
            }
@@ -771,13 +776,13 @@ impl InodeData {
             if dir_entry.inum == 0 {
                 continue;
             }
-            println!("dir_entry_name: {}, name: {}", String::from_utf8(dir_entry.name.to_vec()).unwrap(), String::from_utf8(name.to_vec()).unwrap());
+            info!("dir_entry_name: {}, name: {}", String::from_utf8(dir_entry.name.to_vec()).unwrap(), String::from_utf8(name.to_vec()).unwrap());
             for i in 0..DIRSIZ {
                 if dir_entry.name[i] != name[i] {
                     break;
                 }
                 if dir_entry.name[i] == 0 {
-                    println!("find you!!!");
+                    info!("find you!!!");
                     dir_entry.inum=0;
                     dir_entry.name=[0;DIRSIZ];
                     self.write(dir_entry_ptr as usize, offset, de_size as u32);
@@ -805,7 +810,7 @@ impl InodeData {
             if dir_entry.inum == 0 || offset/(de_size as u32) < 2{
                 continue;
             }
-            // println!("dir_entry_name: {}, name: {}", String::from_utf8(dir_entry.name.to_vec()).unwrap(), String::from_utf8(name.to_vec()).unwrap());
+            // info!("dir_entry_name: {}, name: {}", String::from_utf8(dir_entry.name.to_vec()).unwrap(), String::from_utf8(name.to_vec()).unwrap());
             let mut child_inode=ICACHE.get(self.dev, dir_entry.inum as u32);
             let mut cdata=child_inode.lock();
             match cdata.dinode.itype {
@@ -855,15 +860,15 @@ impl Inode {
     /// Load it from the disk if its content not cached yet. 
     pub fn lock<'a>(&'a self) -> MutexGuard<'a, InodeData> {
         assert!(self.index < NINODE, "index must less than NINODE");
-        // println!("[Kernel] inode.lock(): inode index: {}, dev: {}, inum: {}", self.index, self.dev, self.inum);
+        // info!("[Kernel] inode.lock(): inode index: {}, dev: {}, inum: {}", self.index, self.dev, self.inum);
         let mut guard = ICACHE.data[self.index].lock();
         
         if !guard.valid {
             let blockno = unsafe{ SUPER_BLOCK.locate_inode(self.inum) };
-            println!("blockno is {}",blockno);
+            info!("blockno is {}",blockno);
             let buf = BLOCK_CACHE_MANAGER.bread(self.dev, blockno);
             let offset = locate_inode_offset(self.inum) as isize;
-            println!("offset is {:?}",offset);
+            info!("offset is {:?}",offset);
             //let data=buf.raw_data() as *const RawSuperBlock;
             let data=buf.raw_data() as *const DiskInode;
             // for i in 0..16{
@@ -873,14 +878,14 @@ impl Inode {
             //     let dd=unsafe {
             //         core::ptr::read(d)
             //     };
-            //     println!("{} disk inode is {:?}",i,dd);
+            //     info!("{} disk inode is {:?}",i,dd);
             // }
-            //println!("data is {:?}",unsafe{core::ptr::read(data)});
+            //info!("data is {:?}",unsafe{core::ptr::read(data)});
             //let dinode = unsafe{ (buf.raw_data() as *const RawSuperBlock).offset(offset) };
             let dinode = unsafe{ (buf.raw_data() as *const DiskInode).offset(offset) };
             guard.dinode = unsafe{ core::ptr::read(dinode) };
-            //println!("{:?}",guard.dinode);
-            // println!("dinode is {:?}",unsafe {
+            //info!("{:?}",guard.dinode);
+            // info!("dinode is {:?}",unsafe {
             //     core::ptr::read(dinode)
             // });
             drop(buf);
