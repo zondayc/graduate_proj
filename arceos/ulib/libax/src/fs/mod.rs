@@ -1,9 +1,11 @@
 pub mod error;
 pub mod filetype;
 mod path;
-
+extern crate alloc;
 pub use self::error::{Error, Result};
-pub use alloc::{string::String, vec::Vec};
+pub use alloc::{string::String};
+pub use alloc::vec::Vec;
+pub use alloc::vec;
 pub use path::Path;
 
 use axfs::open;

@@ -1,4 +1,5 @@
-use crate::alloc::string::ToString;
+extern crate alloc;
+use alloc::string::ToString;
 use alloc::string::String;
 
 /// The struct contains the file path.
