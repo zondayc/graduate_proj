@@ -36,6 +36,7 @@ pub fn read_to_string(path: Path) -> Result<String> {
 }
 
 pub fn write(path: Path, data: &[u8]) -> Result<()> {
+    info!("begin write");
     match open(path.as_path()) {
         Some(file) => {
             file.write(data);

@@ -3,12 +3,14 @@ use xv6fs::{file::{VFile,FileType},disk_inode::InodeType,xv6fs::Xv6FileSystem, B
 use vfscore::{VfsFile,SeekFrom,VfsFileSystem};
 extern crate alloc;
 use alloc::{boxed::Box,vec::Vec,string::String};
+use axlog::info;
 
 pub struct vfsFile{
     vfile:VFile,
 }
 impl VfsFile for vfsFile {
     fn open(&self, path: &str) -> Option<Box<dyn VfsFile>>{
+        info!("vfsfile: path is {}",path);
         let vfs_file=VFile::vfile_open(path,true, true).unwrap();
         Some(Box::new(vfsFile{vfile:vfs_file}))
     }
@@ -42,6 +44,7 @@ impl VfsFile for vfsFile {
 
     }
     fn remove(&self, file_name: &str){
+        info!("path = {}",file_name);
         self.vfile.vfile_remove(file_name);
     }
     fn size(&self) -> usize{

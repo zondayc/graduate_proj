@@ -7,6 +7,7 @@ use super::stat::Stat;
 use crate::log::LOG_MANAGER;
 use alloc::vec::Vec;
 use alloc::string::String;
+use axlog::info;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(u16)]
@@ -209,6 +210,7 @@ impl VFile {
     }
 
     pub fn vfile_open(path:&str,readable:bool,writeable:bool)->Option<Self>{
+        info!("vfile open: path is {}",path);
         let inode=ICACHE.create(path.as_bytes(),crate::disk_inode::InodeType::File, 2, 1).unwrap();
         Some(Self { ftype: FileType::File, readable, writeable, inode:Some(inode), offset:0, major:2})
     }
@@ -223,13 +225,16 @@ impl VFile {
 
     pub fn vfile_remove(&self,path:&str){
         ICACHE.remove(path.as_bytes());
+        LOG_MANAGER.commit_log();
     }
 
     pub fn vfile_create(&self,path:&str,itype:InodeType)->Self{
+        info!("vfile create: path is {}",path);
         let self_inode=self.inode.as_ref().unwrap();
         let mut self_idata=self_inode.lock();
         let dev=self_inode.dev;
         let inum=inode_alloc(dev,itype);
+        info!("vfile create: inum is {}",inum);
         let inode=ICACHE.get(dev, inum);
         let mut idata=inode.lock();
         idata.dinode.major=2;
@@ -244,10 +249,12 @@ impl VFile {
             idata.dir_link(".".as_bytes(), inum);
             idata.dir_link("..".as_bytes(), self_inode.inum);
         }
-        self_idata.dir_link(path.as_bytes(), self_inode.inum).expect("parent inode fail to link");
+        self_idata.dir_link(path.as_bytes(), inode.inum).expect("parent inode fail to link");
         drop(idata);
         drop(self_idata);
+        LOG_MANAGER.commit_log();
         VFile { ftype, readable:true, writeable:true, inode:Some(inode), offset:0, major:2}
+        
     }
 
     pub fn vfile_size(&self)->usize{

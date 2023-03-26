@@ -3,7 +3,7 @@ use super::DiskInode;
 /// magic number indentifying this specific file system
 pub const FSMAGIC: u32 = 0x10203040;
 /// size of disk block
-pub const BSIZE: usize = 1024;
+pub const BSIZE: usize = 512;
 /// Maxinum of blocks an FS op can write
 pub const MAXOPBLOCKS: usize = 10;
 /// size of buffer cache for block

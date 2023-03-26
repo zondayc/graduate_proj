@@ -192,6 +192,7 @@ impl InodeCache {
                 return None
             }
             if is_parent && path[cur] == 0 {
+                info!("is is parent and path[cur]=0");
                 drop(data_guard);
                 return Some(inode)
             }
@@ -304,13 +305,16 @@ impl InodeCache {
 
     pub fn remove(&self,path: &[u8])->Result<(),&'static str>{
         info!("begin remove");
+        info!("path is {:?}",core::str::from_utf8(path));
         let mut name: [u8; DIRSIZ] = [0; DIRSIZ];
         let dirinode = self.namei_parent(path, &mut name).unwrap();
         info!("name is {:?} as {:?}",&name,String::from_utf8(name.to_vec()));
         let mut dirinode_guard = dirinode.lock();
+        info!("get locked dirinode!");
         match dirinode_guard.dir_lookup(&name) {
             Some(inode) => {
                 let mut idata = inode.lock();
+                info!("get locked inode!");
                 match idata.dinode.itype {
                     InodeType::Directory=> {
                         idata.clear_dir();
@@ -467,7 +471,7 @@ impl InodeData {
     /// Update a modified in-memory inode to disk. 
     /// Typically called after changing the content of inode info. 
     pub fn update(&mut self) {
-        info!("begin update");
+        info!("update: begin update");
         let mut buf = BLOCK_CACHE_MANAGER.bread(
             self.dev, 
             unsafe { SUPER_BLOCK.locate_inode(self.inum)}
@@ -647,6 +651,7 @@ impl InodeData {
     /// Panics if this is not a directory. 
     pub fn dir_lookup(&mut self, name: &[u8]) -> Option<Inode> {
         // assert!(name.len() == DIRSIZ);
+        info!("name is {:?}",core::str::from_utf8(name));
         if self.dinode.itype != InodeType::Directory {
             panic!("inode type is not directory");
         }
@@ -662,12 +667,13 @@ impl InodeData {
             if dir_entry.inum == 0 {
                 continue;
             }
-            // info!("dir_entry_name: {}, name: {}", String::from_utf8(dir_entry.name.to_vec()).unwrap(), String::from_utf8(name.to_vec()).unwrap());
+            info!("dir_entry_name: {}, name: {}, inum: {}", String::from_utf8(dir_entry.name.to_vec()).unwrap(), String::from_utf8(name.to_vec()).unwrap(),dir_entry.inum);
             for i in 0..DIRSIZ {
                 if dir_entry.name[i] != name[i] {
                     break;
                 }
                 if dir_entry.name[i] == 0 {
+                    info!("find you!");
                     return Some(ICACHE.get(self.dev, dir_entry.inum as u32))
                 }
             }
@@ -860,7 +866,7 @@ impl Inode {
     /// Load it from the disk if its content not cached yet. 
     pub fn lock<'a>(&'a self) -> MutexGuard<'a, InodeData> {
         assert!(self.index < NINODE, "index must less than NINODE");
-        // info!("[Kernel] inode.lock(): inode index: {}, dev: {}, inum: {}", self.index, self.dev, self.inum);
+        info!("[Kernel] inode.lock(): inode index: {}, dev: {}, inum: {}", self.index, self.dev, self.inum);
         let mut guard = ICACHE.data[self.index].lock();
         
         if !guard.valid {

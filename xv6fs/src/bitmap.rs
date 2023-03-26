@@ -107,7 +107,6 @@ pub fn inode_alloc(dev: u32, itype: InodeType) -> u32 {
         if dinode.try_alloc(itype).is_ok() {
             info!("inode alloc: inum is {} and offset is {}",inum,offset);
             LOG_MANAGER.write(buf);
-            info!("inum is {}",inum);
             return inum
         }
     }

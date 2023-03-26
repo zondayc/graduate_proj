@@ -1145,6 +1145,7 @@ dependencies = [
 name = "xv6fs_shim"
 version = "0.1.0"
 dependencies = [
+ "axlog",
  "vfscore",
  "xv6fs",
 ]

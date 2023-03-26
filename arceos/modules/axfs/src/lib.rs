@@ -42,23 +42,23 @@ impl FileSystemList {
     }
 }
 
+// pub fn init_filesystems() {
+//     info!("init filesystems");
+//     // init filesystems
+//     let fat32 = Arc::new(Fat32FileSystem::<DiskOps>::new());
+
+//     // init filesystem list
+//     let mut fs_list = FileSystemList::new();
+//     fs_list.add(fat32.clone());
+//     FILESTSTEMS.init_by(fs_list);
+
+//     // init mounted filesystem list
+//     let mut mounted_list = MountedFsList::new();
+//     mounted_list.mount("/", fat32.clone());
+//     MOUNTEDFS.init_by(mounted_list)
+// }
+
 pub fn init_filesystems() {
-    info!("init filesystems");
-    // init filesystems
-    let fat32 = Arc::new(Fat32FileSystem::<DiskOps>::new());
-
-    // init filesystem list
-    let mut fs_list = FileSystemList::new();
-    fs_list.add(fat32.clone());
-    FILESTSTEMS.init_by(fs_list);
-
-    // init mounted filesystem list
-    let mut mounted_list = MountedFsList::new();
-    mounted_list.mount("/", fat32.clone());
-    MOUNTEDFS.init_by(mounted_list)
-}
-
-pub fn init_xv6fs() {
     info!("init xv6fs");
     let xfs=Arc::new(VXV6FS::new());
     unsafe{xv6fs::init(Arc::new(DiskOps), 0);}

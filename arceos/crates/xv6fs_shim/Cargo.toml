@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 xv6fs = { path = "../../../xv6fs" }
 vfscore = { path = "../vfscore" }
+axlog={path="../../modules/axlog"}
