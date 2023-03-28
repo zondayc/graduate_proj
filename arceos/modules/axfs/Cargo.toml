@@ -1,0 +1,17 @@
+[package]
+name = "axfs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+lazy_init = { path = "../../crates/lazy_init" }
+vfscore = { path = "../../crates/vfscore" }
+fatfs-shim = { path = "../../crates/fatfs-shim" }
+xv6fs_shim = {path="../../crates/xv6fs_shim"}
+axlog = { path = "../axlog" }
+axdriver = { path = "../axdriver", features = ["virtio-blk"]}
+driver_block = { path = "../../crates/driver_block" }
+xv6fs={path="../../../xv6fs"}
+# driver_virtio = { path ="../../crates/driver_virtio" }

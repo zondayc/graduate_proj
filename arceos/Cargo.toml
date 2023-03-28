@@ -5,6 +5,7 @@ members = [
     "apps/exception",
     "apps/helloworld",
     "apps/memtest",
+    "apps/hellofs",
     "apps/net/echoserver",
     "apps/net/httpclient",
     "apps/net/httpserver",
@@ -46,7 +47,8 @@ members = [
     "modules/axruntime",
     "modules/axsync",
     "modules/axtask",
-
+    "modules/axfs",
+    "modules/axdevfs",
     "ulib/libax",
     "ulib/c_libax/libax_bindings",
 ]
