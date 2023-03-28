@@ -8,7 +8,7 @@ SECTIONS
     . = BASE_ADDRESS;
     skernel = .;
 
-    .text : {
+    .text : ALIGN(4K) {
         stext = .;
         *(.text.boot)
         *(.text .text.*)
@@ -16,7 +16,7 @@ SECTIONS
         etext = .;
     }
 
-    .rodata : {
+    .rodata : ALIGN(4K) {
         srodata = .;
         *(.rodata .rodata.*)
         *(.srodata .srodata.*)
@@ -24,7 +24,7 @@ SECTIONS
         erodata = .;
     }
 
-    .data : {
+    .data : ALIGN(4K) {
         sdata = .;
         *(.data.boot_page_table)
         . = ALIGN(4K);
@@ -35,7 +35,20 @@ SECTIONS
         edata = .;
     }
 
-    .bss : {
+    percpu_start = .;
+    .percpu 0x0 : AT(percpu_start) ALIGN(4K) {
+        __percpu_offset_start = .;
+        *(.percpu .percpu.*)
+        __percpu_offset_end = .;
+        . = ALIGN(4K);
+        __percpu_size_aligned = .;
+
+        . = __percpu_offset_start + __percpu_size_aligned * %SMP%;
+    }
+    . = percpu_start + SIZEOF(.percpu);
+    percpu_end = .;
+
+    .bss : ALIGN(4K) {
         boot_stack = .;
         *(.bss.stack)
         . = ALIGN(4K);
@@ -50,7 +63,7 @@ SECTIONS
 
     ekernel = .;
 
-    /DISCARD/ : {
-        *(.eh_frame) *(.eh_frame_hdr)
+	/DISCARD/ : {
+        *(.comment) *(.gnu*) *(.note*) *(.eh_frame*)
     }
 }

@@ -2,34 +2,49 @@ mod context;
 
 use core::arch::asm;
 
-use memory_addr::{PhysAddr, VirtAddr, PAGE_SIZE_4K};
+use memory_addr::{PhysAddr, VirtAddr};
 use x86::{bits64::rflags, bits64::rflags::RFlags, controlregs, tlb};
 
 pub use context::{TaskContext, TrapFrame};
 
 #[inline]
 pub fn enable_irqs() {
-    unsafe { asm!("sti") };
+    #[cfg(target_os = "none")]
+    unsafe {
+        asm!("sti")
+    }
 }
 
 #[inline]
 pub fn disable_irqs() {
-    unsafe { asm!("cli") };
+    #[cfg(target_os = "none")]
+    unsafe {
+        asm!("cli")
+    }
 }
 
 #[inline]
 pub fn irqs_enabled() -> bool {
-    !rflags::read().contains(RFlags::FLAGS_IF)
+    if cfg!(target_os = "none") {
+        !rflags::read().contains(RFlags::FLAGS_IF)
+    } else {
+        false
+    }
 }
 
 #[inline]
 pub fn wait_for_irqs() {
-    unsafe { asm!("sti; hlt; cli") };
+    if cfg!(target_os = "none") && irqs_enabled() {
+        // don't halt if local interrupts are disabled
+        unsafe { asm!("hlt") }
+    } else {
+        core::hint::spin_loop()
+    }
 }
 
 #[inline]
 pub fn read_page_table_root() -> PhysAddr {
-    PhysAddr::from(unsafe { controlregs::cr3() } as usize).align_down(PAGE_SIZE_4K)
+    PhysAddr::from(unsafe { controlregs::cr3() } as usize).align_down_4k()
 }
 
 /// # Safety

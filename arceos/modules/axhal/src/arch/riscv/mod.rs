@@ -5,7 +5,8 @@ mod context;
 mod trap;
 
 use memory_addr::{PhysAddr, VirtAddr};
-use riscv::{asm, register::satp, register::sstatus};
+use riscv::asm;
+use riscv::register::{satp, sstatus, stvec};
 
 pub use context::{TaskContext, TrapFrame};
 
@@ -26,9 +27,7 @@ pub fn irqs_enabled() -> bool {
 
 #[inline]
 pub fn wait_for_irqs() {
-    enable_irqs();
     unsafe { riscv::asm::wfi() }
-    disable_irqs();
 }
 
 #[inline]
@@ -57,4 +56,9 @@ pub fn flush_tlb(vaddr: Option<VirtAddr>) {
             asm::sfence_vma_all();
         }
     }
+}
+
+#[inline]
+pub fn set_tap_vector_base(stvec: usize) {
+    unsafe { stvec::write(stvec, stvec::TrapMode::Direct) }
 }

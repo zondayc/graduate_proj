@@ -1,8 +1,9 @@
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 
-#[macro_use]
-extern crate crate_interface;
 extern crate log;
+
+#[cfg(not(feature = "std"))]
+use crate_interface::{call_interface, def_interface};
 
 use core::fmt::{self, Write};
 use core::str::FromStr;
@@ -53,24 +54,40 @@ enum ColorCode {
     BrightWhite = 97,
 }
 
-define_interface! {
-    /// Extern interfaces called in this crate.
-    pub trait LogIf {
-        /// write a string to the console.
-        fn console_write_str(&self, s: &str);
-    }
+/// Extern interfaces called in this crate.
+#[cfg(not(feature = "std"))]
+#[def_interface]
+pub trait LogIf {
+    /// write a string to the console.
+    fn console_write_str(s: &str);
+
+    /// get current time
+    fn current_time() -> core::time::Duration;
+
+    /// get current CPU ID.
+    fn current_cpu_id() -> Option<usize>;
+
+    /// get current task ID.
+    fn current_task_id() -> Option<u64>;
 }
 
 struct Logger;
 
 impl Write for Logger {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        call_interface!(console_write_str, s);
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "std")] {
+                std::print!("{}", s);
+            } else {
+                call_interface!(LogIf::console_write_str, s);
+            }
+        }
         Ok(())
     }
 }
 
 impl Log for Logger {
+    #[inline]
     fn enabled(&self, _metadata: &Metadata) -> bool {
         true
     }
@@ -82,14 +99,7 @@ impl Log for Logger {
 
         let level = record.level();
         let line = record.line().unwrap_or(0);
-        let target = record.target();
-        let level_color = match level {
-            Level::Error => ColorCode::BrightRed,
-            Level::Warn => ColorCode::BrightYellow,
-            Level::Info => ColorCode::BrightGreen,
-            Level::Debug => ColorCode::BrightCyan,
-            Level::Trace => ColorCode::BrightBlack,
-        };
+        let path = record.target();
         let args_color = match level {
             Level::Error => ColorCode::Red,
             Level::Warn => ColorCode::Yellow,
@@ -97,19 +107,69 @@ impl Log for Logger {
             Level::Debug => ColorCode::Cyan,
             Level::Trace => ColorCode::BrightBlack,
         };
-        __print_impl(with_color!(
-            ColorCode::White,
-            "[{} {} {}\n",
-            with_color!(level_color, "{:<5}", level),
-            with_color!(ColorCode::White, "{}:{}]", target, line),
-            with_color!(args_color, "{}", record.args()),
-        ));
+
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "std")] {
+                __print_impl(with_color!(
+                    ColorCode::White,
+                    "[{time} {path}:{line}] {args}\n",
+                    time = chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.6f"),
+                    path = path,
+                    line = line,
+                    args = with_color!(args_color, "{}", record.args()),
+                ));
+            } else {
+                let cpu_id = call_interface!(LogIf::current_cpu_id);
+                let tid = call_interface!(LogIf::current_task_id);
+                let now = call_interface!(LogIf::current_time);
+                if let Some(cpu_id) = cpu_id {
+                    if let Some(tid) = tid {
+                        __print_impl(with_color!(
+                            ColorCode::White,
+                            "[{:>3}.{:06} {cpu_id}:{tid} {path}:{line}] {args}\n",
+                            now.as_secs(),
+                            now.subsec_micros(),
+                            cpu_id = cpu_id,
+                            tid = tid,
+                            path = path,
+                            line = line,
+                            args = with_color!(args_color, "{}", record.args()),
+                        ));
+                    } else {
+                        __print_impl(with_color!(
+                            ColorCode::White,
+                            "[{:>3}.{:06} {cpu_id} {path}:{line}] {args}\n",
+                            now.as_secs(),
+                            now.subsec_micros(),
+                            cpu_id = cpu_id,
+                            path = path,
+                            line = line,
+                            args = with_color!(args_color, "{}", record.args()),
+                        ));
+                    }
+                } else {
+                    __print_impl(with_color!(
+                        ColorCode::White,
+                        "[{:>3}.{:06} {path}:{line}] {args}\n",
+                        now.as_secs(),
+                        now.subsec_micros(),
+                        path = path,
+                        line = line,
+                        args = with_color!(args_color, "{}", record.args()),
+                    ));
+                }
+            }
+        }
     }
 
     fn flush(&self) {}
 }
 
 pub fn __print_impl(args: fmt::Arguments) {
+    use spinlock::SpinNoIrq; // TODO: more efficient
+    static LOCK: SpinNoIrq<()> = SpinNoIrq::new(());
+
+    let _guard = LOCK.lock();
     Logger.write_fmt(args).unwrap();
 }
 
