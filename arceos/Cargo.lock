@@ -52,6 +52,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "arceos-hellofs"
+version = "0.1.0"
+dependencies = [
+ "libax",
+]
+
+[[package]]
 name = "arceos-helloworld"
 version = "0.1.0"
 dependencies = [
@@ -108,6 +115,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "array-const-fn-init"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8bcb85e548c05d407fa6faff46b750ba287714ef32afc0f5e15b4641ffd6affb"
+
+[[package]]
+name = "array-macro"
+version = "2.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "457661fa6716c30b73d7c41400a8a78780d20523b83a9441dabec28e93f27cf4"
+
+[[package]]
 name = "atomic-polyfill"
 version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -154,6 +173,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "axdevfs"
+version = "0.1.0"
+
+[[package]]
 name = "axdisplay"
 version = "0.1.0"
 dependencies = [
@@ -177,6 +200,7 @@ dependencies = [
  "driver_display",
  "driver_net",
  "driver_virtio",
+ "lazy_init",
  "log",
  "tuple_for_each",
 ]
@@ -184,6 +208,20 @@ dependencies = [
 [[package]]
 name = "axerror"
 version = "0.1.0"
+
+[[package]]
+name = "axfs"
+version = "0.1.0"
+dependencies = [
+ "axdriver",
+ "axlog",
+ "driver_block",
+ "fatfs-shim",
+ "lazy_init",
+ "vfscore",
+ "xv6fs",
+ "xv6fs_shim",
+]
 
 [[package]]
 name = "axhal"
@@ -250,6 +288,7 @@ dependencies = [
  "axconfig",
  "axdisplay",
  "axdriver",
+ "axfs",
  "axhal",
  "axlog",
  "axnet",
@@ -537,6 +576,7 @@ dependencies = [
 name = "driver_virtio"
 version = "0.1.0"
 dependencies = [
+ "axsync",
  "cfg-if",
  "driver_block",
  "driver_common",
@@ -589,6 +629,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "fatfs"
+version = "0.4.0"
+source = "git+https://github.com/rafalh/rust-fatfs?rev=a3a834e#a3a834ef92d94dd227c316c0887654dab00ae085"
+dependencies = [
+ "bitflags",
+ "log",
+]
+
+[[package]]
+name = "fatfs-shim"
+version = "0.1.0"
+dependencies = [
+ "fatfs",
+ "log",
+ "spin 0.9.5",
+ "vfscore",
+]
+
+[[package]]
 name = "float-cmp"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -636,7 +695,7 @@ dependencies = [
  "atomic-polyfill",
  "hash32",
  "rustc_version",
- "spin",
+ "spin 0.9.5",
  "stable_deref_trait",
 ]
 
@@ -726,12 +785,22 @@ name = "lazy_init"
 version = "0.1.0"
 
 [[package]]
+name = "lazy_static"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+dependencies = [
+ "spin 0.5.2",
+]
+
+[[package]]
 name = "libax"
 version = "0.1.0"
 dependencies = [
  "axdisplay",
  "axdriver",
  "axerror",
+ "axfs",
  "axhal",
  "axlog",
  "axnet",
@@ -876,7 +945,7 @@ dependencies = [
  "cfg-if",
  "kernel_guard",
  "percpu_macros",
- "spin",
+ "spin 0.9.5",
  "x86",
 ]
 
@@ -1128,6 +1197,12 @@ dependencies = [
 
 [[package]]
 name = "spin"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
+
+[[package]]
+name = "spin"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7dccf47db1b41fa1573ed27ccf5e08e3ca771cb994f776668c5ebda893b248fc"
@@ -1257,6 +1332,10 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
+
+[[package]]
+name = "vfscore"
+version = "0.1.0"
 
 [[package]]
 name = "virtio-drivers"
@@ -1398,6 +1477,28 @@ dependencies = [
  "bitflags",
  "rustversion",
  "volatile",
+]
+
+[[package]]
+name = "xv6fs"
+version = "0.1.0"
+dependencies = [
+ "array-const-fn-init",
+ "array-macro",
+ "axlog",
+ "bit_field",
+ "bitflags",
+ "lazy_static",
+ "spin 0.9.5",
+]
+
+[[package]]
+name = "xv6fs_shim"
+version = "0.1.0"
+dependencies = [
+ "axlog",
+ "vfscore",
+ "xv6fs",
 ]
 
 [[package]]

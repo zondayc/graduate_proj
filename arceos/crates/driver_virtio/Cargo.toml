@@ -17,6 +17,7 @@ default = ["bus-mmio"]
 [dependencies]
 log = "0.4"
 cfg-if = "1.0"
+axsync = {path = "../../modules/axsync"}
 driver_common = { path = "../driver_common" }
 driver_block = { path = "../driver_block", optional = true }
 driver_net = { path = "../driver_net", optional = true }

@@ -6,6 +6,7 @@ extern crate log;
 #[cfg(feature = "virtio")]
 mod virtio;
 
+use lazy_init::LazyInit;
 use tuple_for_each::TupleForEach;
 
 #[cfg(feature = "virtio-blk")]
@@ -14,6 +15,8 @@ pub use self::virtio::VirtIoBlockDev;
 pub use self::virtio::VirtIoGpuDev;
 #[cfg(feature = "virtio-net")]
 pub use self::virtio::VirtIoNetDev;
+
+static DEVICES: LazyInit<AllDevices> = LazyInit::new();
 
 #[derive(TupleForEach)]
 pub struct BlockDevices(
@@ -59,4 +62,8 @@ pub fn init_drivers() -> AllDevices {
     info!("Initialize device drivers...");
 
     AllDevices::probe()
+}
+
+pub fn block_devices() -> &'static BlockDevices {
+    &DEVICES.block
 }
