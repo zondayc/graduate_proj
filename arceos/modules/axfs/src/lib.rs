@@ -9,7 +9,7 @@ extern crate alloc;
 extern crate axlog;
 
 use alloc::{sync::Arc, vec::Vec};
-use axdriver::block_devices;
+use axdriver::{block_devices, BlockDevices};
 use driver_block::BlockDriverOps;
 use fatfs_shim::Fat32FileSystem;
 use xv6fs_shim::{VXV6FS};
@@ -21,6 +21,7 @@ use crate::mount::{MountedFsList, MOUNTEDFS};
 pub use ops::*;
 
 static FILESTSTEMS: LazyInit<FileSystemList> = LazyInit::new();
+static BLOCK_DEV:LazyInit<BlockDevices>=LazyInit::new();
 
 pub struct FileSystemList(Vec<Arc<dyn VfsFileSystem>>);
 
@@ -58,7 +59,9 @@ impl FileSystemList {
 //     MOUNTEDFS.init_by(mounted_list)
 // }
 
-pub fn init_filesystems() {
+pub fn init_filesystems(blk_devs: BlockDevices) {
+    info!("init block device");
+    init_block_dev(blk_devs);
     info!("init xv6fs");
     let xfs=Arc::new(VXV6FS::new());
     unsafe{xv6fs::init(Arc::new(DiskOps), 0);}
@@ -73,6 +76,10 @@ pub fn init_filesystems() {
     mounted_list.mount("/", xfs.clone());
     MOUNTEDFS.init_by(mounted_list)
 
+}
+
+fn init_block_dev(blk_devs: BlockDevices){
+    BLOCK_DEV.init_by(blk_devs);
 }
 
 pub struct DiskOps;
@@ -95,14 +102,15 @@ impl DiskOperation for DiskOps {
 
 impl BlockDevice for DiskOps {
     fn read_block(&self,index: usize, buf: &mut [u8]) {
-        block_devices()
+        info!("read blockdevice");
+        BLOCK_DEV
             .0
             .read_block(index, buf)
             .expect("can't read block");
     }
 
     fn write_block(&self,index: usize, data: &[u8]) {
-        block_devices()
+        BLOCK_DEV
             .0
             .write_block(index, data)
             .expect("can't write block");

@@ -77,4 +77,6 @@ fn main() {
     test_list_files();
     test_directory();
     test_file();
+
+    libax::println!("end test!");
 }

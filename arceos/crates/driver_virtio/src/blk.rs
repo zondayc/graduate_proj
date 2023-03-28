@@ -2,7 +2,7 @@ use crate::as_dev_err;
 use driver_block::BlockDriverOps;
 use driver_common::{BaseDriverOps, DevResult, DeviceType};
 use virtio_drivers::{device::blk::VirtIOBlk as InnerDev, transport::Transport, Hal};
-use axsync::{Mutex,MutexGuard};
+use spin::{Mutex,MutexGuard};
 
 pub struct VirtIoBlkDev<H: Hal, T: Transport> {
     inner:  Mutex<InnerDev<H, T>>,

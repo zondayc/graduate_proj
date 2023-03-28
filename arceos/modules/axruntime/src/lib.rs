@@ -138,6 +138,9 @@ pub extern "C" fn rust_main(cpu_id: usize, dtb: usize) -> ! {
 
         #[cfg(feature = "display")]
         axdisplay::init_display(all_devices.display);
+
+        #[cfg(feature="fs")]
+        axfs::init_filesystems(all_devices.block);
     }
 
     info!("Initialize interrupt handlers...");

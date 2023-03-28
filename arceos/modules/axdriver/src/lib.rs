@@ -62,6 +62,7 @@ pub fn init_drivers() -> AllDevices {
     info!("Initialize device drivers...");
 
     AllDevices::probe()
+
 }
 
 pub fn block_devices() -> &'static BlockDevices {

@@ -583,6 +583,7 @@ dependencies = [
  "driver_display",
  "driver_net",
  "log",
+ "spin 0.9.5",
  "virtio-drivers",
 ]
 
