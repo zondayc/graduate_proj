@@ -8,7 +8,7 @@ authors = ["Yuekai Jia <equation618@gmail.com>"]
 
 [dependencies]
 log = "0.4"
-spin = "0.9"
+spinlock = { path = "../../crates/spinlock" }
 memory_addr = { path = "../../crates/memory_addr" }
 allocator = { path = "../../crates/allocator" }
 axerror = { path = "../axerror" }

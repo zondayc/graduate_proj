@@ -7,12 +7,15 @@ authors = ["Yuekai Jia <equation618@gmail.com>"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
+# Multicore
+smp = ["axruntime/smp", "axhal/smp"]
+
 # Memory
 alloc = ["axruntime/alloc"]
 paging = ["axruntime/paging"]
 
 # Multi-task
-multitask = ["axruntime/multitask", "axtask/multitask"]
+multitask = ["axruntime/multitask", "axtask/multitask", "axsync/multitask"]
 sched_fifo = ["axtask/sched_fifo"]
 sched_rr = ["axtask/sched_rr"]
 
@@ -20,7 +23,10 @@ sched_rr = ["axtask/sched_rr"]
 net = ["axruntime/net", "dep:axnet"]
 
 # File system
-fs = ["axruntime/fs", "dep:axfs"]
+fs = ["axruntime/fs"]
+
+# Display
+display = ["axruntime/display", "dep:axdisplay"]
 
 # Logging
 log-level-off = ["axlog/log-level-off"]
@@ -37,11 +43,12 @@ platform-qemu-virt-aarch64 = ["axhal/platform-qemu-virt-aarch64", "axdriver?/bus
 default = ["axtask?/sched_fifo"]
 
 [dependencies]
+axdisplay = { path = "../../modules/axdisplay", optional = true }
 axdriver = { path = "../../modules/axdriver", optional = true }
 axerror = { path = "../../modules/axerror" }
 axhal = { path = "../../modules/axhal" }
 axlog = { path = "../../modules/axlog" }
 axnet = { path = "../../modules/axnet", optional = true }
-axfs  = { path = "../../modules/axfs", optional = true }
 axruntime = { path = "../../modules/axruntime" }
+axsync = { path = "../../modules/axsync", default-features = false, optional = true }
 axtask = { path = "../../modules/axtask", default-features = false, optional = true }

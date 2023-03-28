@@ -90,7 +90,7 @@ unsafe fn init_mmu() {
         + TCR_EL1::ORGN1::WriteBack_ReadAlloc_WriteAlloc_Cacheable
         + TCR_EL1::IRGN1::WriteBack_ReadAlloc_WriteAlloc_Cacheable
         + TCR_EL1::T1SZ.val(16);
-    TCR_EL1.write(TCR_EL1::IPS::Bits_40 + tcr_flags0 + tcr_flags1);
+    TCR_EL1.write(TCR_EL1::IPS::Bits_48 + tcr_flags0 + tcr_flags1);
     barrier::isb(barrier::SY);
 
     // Set both TTBR0 and TTBR1
@@ -114,28 +114,77 @@ unsafe extern "C" fn _start() -> ! {
         fn rust_main();
     }
     // PC = 0x4008_0000
+    // X0 = dtb
     core::arch::asm!("
-        adrp    x8, boot_stack_top
-        mov     sp, x8
-        bl      {switch_to_el1}
+        mrs     x19, mpidr_el1
+        and     x19, x19, #0xffffff     // get current CPU id
+        mov     x20, x0                 // save DTB pointer
+
+        adrp    x8, {BOOT_STACK}
+        add     x8, x8, {TASK_STACK_SIZE}
+        mov     sp, x8                  // setup boot stack
+
+        bl      {switch_to_el1}         // switch to EL1
         bl      {init_boot_page_table}
-        bl      {init_mmu}
+        bl      {init_mmu}              // setup MMU
 
-        // set SP to the high address
-        ldr     x8, =boot_stack_top
+        ldr     x8, ={BOOT_STACK}       // set SP to the high address
+        add     x8, x8, {TASK_STACK_SIZE}
         mov     sp, x8
 
-        // call functions at the high address
-        ldr     x8, ={platform_init}
+        mov     x0, x19
+        mov     x1, x20
+        ldr     x8, ={platform_init}    // call platform_init(cpu_id, dtb)
         blr     x8
-        ldr     x8, ={rust_main}
+
+        mov     x0, x19
+        mov     x1, x20
+        ldr     x8, ={rust_main}        // call rust_main(cpu_id, dtb)
         blr     x8
         b      .",
         switch_to_el1 = sym switch_to_el1,
         init_boot_page_table = sym init_boot_page_table,
         init_mmu = sym init_mmu,
+        BOOT_STACK = sym BOOT_STACK,
+        TASK_STACK_SIZE = const TASK_STACK_SIZE,
         platform_init = sym super::platform_init,
         rust_main = sym rust_main,
+        options(noreturn),
+    )
+}
+
+#[cfg(feature = "smp")]
+#[naked]
+#[no_mangle]
+#[link_section = ".text.boot"]
+unsafe extern "C" fn _start_secondary() -> ! {
+    extern "Rust" {
+        fn rust_main_secondary();
+    }
+    core::arch::asm!("
+        mrs     x19, mpidr_el1
+        and     x19, x19, #0xffffff     // get current CPU id
+
+        mov     sp, x0
+        bl      {switch_to_el1}
+        bl      {init_mmu}
+
+        mov     x8, {phys_virt_offset}
+        add     sp, sp, x8              // set SP to the high address
+
+        mov     x0, x19
+        ldr     x8, ={platform_init_secondary}
+        blr     x8                      // call platform_init_secondary(cpu_id)
+
+        mov     x0, x19
+        ldr     x8, ={rust_main_secondary}
+        blr     x8                      // call rust_main_secondary(cpu_id)
+        b      .",
+        switch_to_el1 = sym switch_to_el1,
+        init_mmu = sym init_mmu,
+        phys_virt_offset = const axconfig::PHYS_VIRT_OFFSET,
+        platform_init_secondary = sym super::platform_init_secondary,
+        rust_main_secondary = sym rust_main_secondary,
         options(noreturn),
     )
 }

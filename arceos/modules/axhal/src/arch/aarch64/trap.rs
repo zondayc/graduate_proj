@@ -81,5 +81,5 @@ fn handle_sync_exception(tf: &mut TrapFrame) {
 
 #[no_mangle]
 fn handle_irq_exception(_tf: &mut TrapFrame) {
-    warn!("GIC not supported, skip irq handling");
+    crate::trap::handle_irq_extern(0)
 }

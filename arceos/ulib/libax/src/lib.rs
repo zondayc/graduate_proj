@@ -3,7 +3,6 @@
 pub use axlog::{debug, error, info, print, println, trace, warn};
 
 #[cfg(feature = "alloc")]
-#[macro_use]
 extern crate alloc;
 
 #[macro_use]
@@ -13,6 +12,9 @@ extern crate axlog;
 extern crate axruntime;
 
 pub mod io;
+pub mod rand;
+pub mod sync;
+pub mod time;
 
 #[cfg(feature = "multitask")]
 pub mod task;
@@ -20,5 +22,5 @@ pub mod task;
 #[cfg(feature = "net")]
 pub mod net;
 
-#[cfg(feature = "fs")]
-pub mod fs;
+#[cfg(feature = "display")]
+pub mod display;

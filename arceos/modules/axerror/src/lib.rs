@@ -34,10 +34,6 @@ pub enum AxError {
     ResourceBusy,
     /// This operation is unsupported or unimplemented.
     Unsupported,
-    // /// This is not a directory
-    // NotDir,
-    // /// This is not a File
-    // NotFile
 }
 
 /// A [`Result`] type with [`AxError`] as the error type.
