@@ -274,12 +274,12 @@ impl VFile {
         let count_lock=Arc::new(SleepLock::new(counter,init_lock()));
         let i_lock=SleepLock::new(i,init_lock());
         static SUM:AtomicI32=AtomicI32::new(0);
-        for i in 0..2{
+        for i in 0..3{
             let clock=count_lock.clone();
             axtask::spawn(move||{
                 let g1=clock.lock();
-                drop(g1);
                 axtask::yield_now();
+                drop(g1);
                 info!("hello i, {}",i);
                 axtask::yield_now();
                 info!("hello i, {}",i);
@@ -287,7 +287,7 @@ impl VFile {
             });  
         }
         loop {
-            if SUM.load(core::sync::atomic::Ordering::Acquire)==2{
+            if SUM.load(core::sync::atomic::Ordering::Acquire)==3{
                 break;
             }
             axtask::yield_now();
