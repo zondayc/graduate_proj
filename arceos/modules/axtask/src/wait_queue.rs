@@ -53,6 +53,7 @@ impl WaitQueue {
     {
         loop {
             let mut rq = RUN_QUEUE.lock();
+            info!("loop in wait until");
             if condition() {
                 break;
             }

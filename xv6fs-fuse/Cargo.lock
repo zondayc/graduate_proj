@@ -547,6 +547,7 @@ dependencies = [
  "axtask",
  "bit_field",
  "bitflags",
+ "lazy_init",
  "lazy_static",
  "spin 0.9.5",
 ]

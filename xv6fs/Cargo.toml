@@ -15,3 +15,4 @@ lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
 
 axlog={path="../arceos/modules/axlog"}
 axtask={path="../arceos/modules/axtask"}
+lazy_init = { path = "../arceos/crates/lazy_init" }

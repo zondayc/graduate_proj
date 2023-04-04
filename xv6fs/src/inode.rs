@@ -178,7 +178,7 @@ impl InodeCache {
             info!("path 0 is /");
         } else {
             //这里是要获取当前目录的名称
-            inode=self.dup(INTERFACE_MANAGER.lock().interface.as_ref().get_cur_dir_inode().as_ref().unwrap());
+            inode=self.dup(INTERFACE_MANAGER.interface.as_ref().get_cur_dir_inode().as_ref().unwrap());
         }
         let mut cur: usize = 0;
         loop {

@@ -33,7 +33,7 @@ impl<T> SleepLock<T> {
 }
 
 pub fn init_lock()->usize{
-        INTERFACE_MANAGER.lock().interface.new_sleep_lock()
+        INTERFACE_MANAGER.interface.new_sleep_lock()
 }
 
 impl<T: ?Sized> SleepLock<T> {
@@ -41,9 +41,9 @@ impl<T: ?Sized> SleepLock<T> {
     pub fn lock(&self) -> SleepLockGuard<T> {
         //let mut guard = self.lock.lock();
         info!("xv6 sleep lock: lock!");
-        info!("1flag is {}",INTERFACE_MANAGER.lock().interface.get_flag(self.index));
-        INTERFACE_MANAGER.lock().interface.sleep_cur_proc(self.index);
-        info!("2flag is {}",INTERFACE_MANAGER.lock().interface.get_flag(self.index));
+        info!("1flag is {}",INTERFACE_MANAGER.interface.get_flag(self.index));
+        INTERFACE_MANAGER.interface.sleep_cur_proc(self.index);
+        info!("2flag is {}",INTERFACE_MANAGER.interface.get_flag(self.index));
         //drop(guard);
         SleepLockGuard {
             lock: &self,
@@ -54,13 +54,11 @@ impl<T: ?Sized> SleepLock<T> {
     /// Called by its guard when dropped
     pub fn unlock(&self) {
         info!("unlock!");
-        let guard = self.lock.lock();
         self.wake_up();//我感觉这里还是得搞个队列吧
-        drop(guard);
     }
 
     fn wake_up(&self) {
-        INTERFACE_MANAGER.lock().interface.wake_up_next_proc(self.index);
+        INTERFACE_MANAGER.interface.wake_up_next_proc(self.index);
     }
 }
 

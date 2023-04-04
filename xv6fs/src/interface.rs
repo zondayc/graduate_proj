@@ -1,4 +1,5 @@
 use alloc::sync::Arc;
+use lazy_init::LazyInit;
 use lazy_static::*;
 use core::{any::Any, sync::atomic::AtomicBool};
 use spin::{Mutex, MutexGuard};
@@ -38,18 +39,5 @@ impl FsInterface for InterfaceNone {
         true
     }
 }
+pub static INTERFACE_MANAGER: LazyInit<InterfaceManager>=LazyInit::new();
 
-impl InterfaceManager {
-    
-    pub fn new()->Self{
-        Self { interface: Arc::new(InterfaceNone) }
-    }
-
-    pub fn set_interface(&mut self,interface:Arc<dyn FsInterface>){
-        self.interface=Arc::clone(&interface);
-    }
-}
-
-lazy_static!{
-    pub static ref INTERFACE_MANAGER: Mutex<InterfaceManager>=Mutex::new(InterfaceManager::new());
-}

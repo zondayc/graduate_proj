@@ -280,9 +280,9 @@ impl VFile {
                 let g1=clock.lock();
                 axtask::yield_now();
                 drop(g1);
-                info!("hello i, {}",i);
+                info!("==========hello i===========, {}",i);
                 axtask::yield_now();
-                info!("hello i, {}",i);
+                info!("hello i, {}, sum is {}",i,SUM.load(core::sync::atomic::Ordering::Acquire));
                 SUM.fetch_add(1, core::sync::atomic::Ordering::Release);
             });  
         }

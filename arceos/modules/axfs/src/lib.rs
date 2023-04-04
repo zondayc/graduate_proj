@@ -15,7 +15,8 @@ use driver_block::BlockDriverOps;
 use fatfs_shim::Fat32FileSystem;
 use sleeplock_shim::FsLockList;
 use spin::mutex::Mutex;
-use xv6fs::interface::INTERFACE_MANAGER;
+use spin::rwlock::RwLock;
+use xv6fs::interface::{INTERFACE_MANAGER,InterfaceManager};
 use xv6fs_shim::{VXV6FS};
 use xv6fs::{BlockDevice, interface::FsInterface};
 use lazy_init::LazyInit;
@@ -70,9 +71,10 @@ pub fn init_filesystems(blk_devs: BlockDevices) {
     info!("init xv6fs");
     let xfs=Arc::new(VXV6FS::new());
     unsafe{xv6fs::init(Arc::new(DiskOps), 0);}
-    INTERFACE_MANAGER.lock().set_interface(Arc::new(AxFsInterface));
+    let interface=InterfaceManager{interface:Arc::new(AxFsInterface::new())};
+    INTERFACE_MANAGER.init_by(interface);
 
-    let lock_list=Mutex::new(FsLockList::new());
+    let lock_list=FsLockList::new();
     FS_LOCK_LIST.init_by(lock_list);
 
     // init filesystem list
@@ -130,26 +132,34 @@ pub fn filesystems() -> &'static FileSystemList {
     &FILESTSTEMS
 }
 
-pub struct AxFsInterface;
+pub struct AxFsInterface{
+    fs_lock_list:RwLock<FsLockList>,
+}
+
+impl AxFsInterface {
+    pub fn new()->Self{
+        Self { fs_lock_list: RwLock::new(FsLockList { lock_list:Vec::new() }) }
+    }
+}
 
 impl FsInterface for AxFsInterface{
     fn get_cur_dir_inode(&self)->Option<xv6fs::inode::Inode> {
         None
     }
     fn new_sleep_lock(&self)->usize {
-        FS_LOCK_LIST.lock().new_lock()
+        self.fs_lock_list.write().new_lock()
     }
     fn sleep_cur_proc(&self,index:usize) {
         info!("index is {}",index);
-        info!("before, lock is {}",FS_LOCK_LIST.lock().lock_list[index].flag.load(core::sync::atomic::Ordering::Acquire));
-        FS_LOCK_LIST.lock().lock_list[index].sleep_cur_task();
-        info!("after, lock is {}",FS_LOCK_LIST.lock().lock_list[index].flag.load(core::sync::atomic::Ordering::Acquire));
+        info!("before, lock is {}",self.fs_lock_list.read().lock_list[index].flag.load(core::sync::atomic::Ordering::Acquire));
+        self.fs_lock_list.read().lock_list[index].sleep_cur_task();
+        info!("after, lock is {}",self.fs_lock_list.read().lock_list[index].flag.load(core::sync::atomic::Ordering::Acquire));
     }
     fn wake_up_next_proc(&self,index:usize) {
-        FS_LOCK_LIST.lock().lock_list[index].wake_up_next_proc();
+        self.fs_lock_list.read().lock_list[index].wake_up_next_proc();
     }
     fn get_flag(&self,index:usize)->bool {
-        FS_LOCK_LIST.lock().lock_list[index].flag.load(core::sync::atomic::Ordering::Acquire)
+        self.fs_lock_list.read().lock_list[index].flag.load(core::sync::atomic::Ordering::Acquire)
     }
 }
 
