@@ -1,3 +1,4 @@
 mod up;
-mod sleeplock;
+pub mod sleeplock;
 pub use up::UPSafeCell;
+

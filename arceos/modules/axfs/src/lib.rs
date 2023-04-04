@@ -2,6 +2,7 @@
 
 pub mod mount;
 mod ops;
+pub mod sleeplock_shim;
 
 #[macro_use]
 extern crate alloc;
@@ -12,12 +13,16 @@ use alloc::{sync::Arc, vec::Vec};
 use axdriver::{block_devices, BlockDevices};
 use driver_block::BlockDriverOps;
 use fatfs_shim::Fat32FileSystem;
+use sleeplock_shim::FsLockList;
+use spin::mutex::Mutex;
+use xv6fs::interface::INTERFACE_MANAGER;
 use xv6fs_shim::{VXV6FS};
-use xv6fs::BlockDevice;
+use xv6fs::{BlockDevice, interface::FsInterface};
 use lazy_init::LazyInit;
 use vfscore::{DiskOperation, VfsFileSystem};
 
 use crate::mount::{MountedFsList, MOUNTEDFS};
+use crate::sleeplock_shim::{FS_LOCK_LIST};
 pub use ops::*;
 
 static FILESTSTEMS: LazyInit<FileSystemList> = LazyInit::new();
@@ -65,6 +70,10 @@ pub fn init_filesystems(blk_devs: BlockDevices) {
     info!("init xv6fs");
     let xfs=Arc::new(VXV6FS::new());
     unsafe{xv6fs::init(Arc::new(DiskOps), 0);}
+    INTERFACE_MANAGER.lock().set_interface(Arc::new(AxFsInterface));
+
+    let lock_list=Mutex::new(FsLockList::new());
+    FS_LOCK_LIST.init_by(lock_list);
 
     // init filesystem list
     let mut fs_list = FileSystemList::new();
@@ -119,4 +128,31 @@ impl BlockDevice for DiskOps {
 
 pub fn filesystems() -> &'static FileSystemList {
     &FILESTSTEMS
+}
+
+pub struct AxFsInterface;
+
+impl FsInterface for AxFsInterface{
+    fn get_cur_dir_inode(&self)->Option<xv6fs::inode::Inode> {
+        None
+    }
+    fn new_sleep_lock(&self)->usize {
+        FS_LOCK_LIST.lock().new_lock()
+    }
+    fn sleep_cur_proc(&self,index:usize) {
+        info!("index is {}",index);
+        info!("before, lock is {}",FS_LOCK_LIST.lock().lock_list[index].flag.load(core::sync::atomic::Ordering::Acquire));
+        FS_LOCK_LIST.lock().lock_list[index].sleep_cur_task();
+        info!("after, lock is {}",FS_LOCK_LIST.lock().lock_list[index].flag.load(core::sync::atomic::Ordering::Acquire));
+    }
+    fn wake_up_next_proc(&self,index:usize) {
+        FS_LOCK_LIST.lock().lock_list[index].wake_up_next_proc();
+    }
+    fn get_flag(&self,index:usize)->bool {
+        FS_LOCK_LIST.lock().lock_list[index].flag.load(core::sync::atomic::Ordering::Acquire)
+    }
+}
+
+pub fn test_sleep_lock(){
+    xv6fs::file::VFile::test_sleep_lock();
 }

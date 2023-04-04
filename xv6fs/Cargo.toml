@@ -12,4 +12,6 @@ bitflags = "1.2.1"
 array-const-fn-init = "0.1.1"
 spin = "0.9.5"
 lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
+
 axlog={path="../arceos/modules/axlog"}
+axtask={path="../arceos/modules/axtask"}

@@ -11,7 +11,9 @@ vfscore = { path = "../../crates/vfscore" }
 fatfs-shim = { path = "../../crates/fatfs-shim" }
 xv6fs_shim = {path="../../crates/xv6fs_shim"}
 axlog = { path = "../axlog" }
+axtask = { path = "../axtask" }
 axdriver = { path = "../axdriver", features = ["virtio-blk"]}
 driver_block = { path = "../../crates/driver_block" }
 xv6fs={path="../../../xv6fs"}
+spin="0.9"
 # driver_virtio = { path ="../../crates/driver_virtio" }

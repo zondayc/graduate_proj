@@ -1,6 +1,6 @@
 use alloc::{boxed::Box, sync::Arc};
 use core::ops::Deref;
-use core::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering};
+use core::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering, AtomicU32};
 use core::{alloc::Layout, cell::UnsafeCell, fmt, ptr::NonNull};
 
 #[cfg(feature = "preempt")]
@@ -42,6 +42,7 @@ pub struct TaskInner {
 
     kstack: Option<TaskStack>,
     ctx: UnsafeCell<TaskContext>,
+    channel: AtomicU32,
 }
 
 impl TaskId {
@@ -102,6 +103,7 @@ impl TaskInner {
             preempt_disable_count: AtomicUsize::new(0),
             kstack: None,
             ctx: UnsafeCell::new(TaskContext::new()),
+            channel:AtomicU32::new(0),
         }
     }
 
@@ -139,6 +141,11 @@ impl TaskInner {
     #[inline]
     pub(crate) fn set_state(&self, state: TaskState) {
         self.state.store(state as u8, Ordering::Release)
+    }
+
+    #[inline]
+    pub(crate) fn set_channel(&self, channel:u32){
+        self.channel.store(channel, Ordering::Release)
     }
 
     #[inline]

@@ -1,20 +1,20 @@
 //! sleeplock
 
-use core::ops::{Deref, DerefMut, Drop};
+use core::ops::{Deref, DerefMut, Drop, Index};
 use core::sync::atomic::{AtomicBool, fence, Ordering};
 use core::cell::{Cell, UnsafeCell};
+use axlog::info;
 use spin::{Mutex,MutexGuard};
 
 use crate::interface::INTERFACE_MANAGER;
 
-pub struct SleepChannel(u8);
 
 pub struct SleepLock<T: ?Sized> {
     lock: Mutex<()>,
-    locked: Cell<bool>,
-    chan: SleepChannel,
-    name: &'static str,
+    index:usize,  //use for index the wait queue in the kernel, 
+                //we use the wait queue in the kernel to guarantee the sleep lock
     data: UnsafeCell<T>,
+    
 }
 
 unsafe impl<T: ?Sized + Sync> Sync for SleepLock<T> {}
@@ -22,29 +22,29 @@ unsafe impl<T: ?Sized + Sync> Sync for SleepLock<T> {}
 // unsafe impl<T: ?Sized + Sync> Send for SleepLock<T> {}
 
 impl<T> SleepLock<T> {
-    pub const fn new(data: T, name: &'static str) -> Self {
+    pub const fn new(data: T, index:usize) -> Self {
         Self {
             lock: Mutex::new(()),
-            locked: Cell::new(false),
-            chan: SleepChannel(0),
-            name,
             data: UnsafeCell::new(data),
+            index,
         }
     }
+    
+}
+
+pub fn init_lock()->usize{
+        INTERFACE_MANAGER.lock().interface.new_sleep_lock()
 }
 
 impl<T: ?Sized> SleepLock<T> {
     /// non-blocking, but might sleep if other p lock this sleeplock
     pub fn lock(&self) -> SleepLockGuard<T> {
-        let mut guard = self.lock.lock();
-        while self.locked.get() {
-            unsafe {
-                INTERFACE_MANAGER.lock().interface.sleep_cur_proc(self.locked.as_ptr() as usize,guard);
-            }
-            guard = self.lock.lock();
-        }
-        self.locked.set(true);
-        drop(guard);
+        //let mut guard = self.lock.lock();
+        info!("xv6 sleep lock: lock!");
+        info!("1flag is {}",INTERFACE_MANAGER.lock().interface.get_flag(self.index));
+        INTERFACE_MANAGER.lock().interface.sleep_cur_proc(self.index);
+        info!("2flag is {}",INTERFACE_MANAGER.lock().interface.get_flag(self.index));
+        //drop(guard);
         SleepLockGuard {
             lock: &self,
             data: unsafe { &mut *self.data.get() }
@@ -53,16 +53,14 @@ impl<T: ?Sized> SleepLock<T> {
 
     /// Called by its guard when dropped
     pub fn unlock(&self) {
+        info!("unlock!");
         let guard = self.lock.lock();
-        self.locked.set(false);
-        self.wake_up();
+        self.wake_up();//我感觉这里还是得搞个队列吧
         drop(guard);
     }
 
     fn wake_up(&self) {
-        unsafe{ 
-            INTERFACE_MANAGER.lock().interface.wake_up_next_proc(self.locked.as_ptr() as usize);
-        }
+        INTERFACE_MANAGER.lock().interface.wake_up_next_proc(self.index);
     }
 }
 

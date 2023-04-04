@@ -70,13 +70,19 @@ fn test_file() {
     libax::fs::remove_file("/test\0".into()).expect("can't remove test file");
 }
 
+fn test_sleep_lock(){
+    libax::fs::test_sleep_lock();
+}
+
 #[no_mangle]
 fn main() {
     libax::println!("Hello, world!");
 
-    test_list_files();
-    test_directory();
-    test_file();
+    // test_list_files();
+    // test_directory();
+    // test_file();
+
+    test_sleep_lock();
 
     libax::println!("end test!");
 }

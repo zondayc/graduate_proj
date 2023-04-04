@@ -68,3 +68,7 @@ pub fn remove_dir_all(path: Path) -> Result<()> {
 pub fn create_dir(path: Path) -> Result<()> {
     axfs::mkdir(path.as_path()).map_or(Err(axerror::AxError::NotFound), |_| Ok(()))
 }
+
+pub fn test_sleep_lock(){
+    axfs::test_sleep_lock();
+}

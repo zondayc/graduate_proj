@@ -1,3 +1,4 @@
+use crate::SleepLock;
 use crate::bitmap::inode_alloc;
 use crate::disk_inode::InodeType;
 use crate::fs_const::{ BSIZE, MAXOPBLOCKS };
@@ -7,7 +8,11 @@ use super::stat::Stat;
 use crate::log::LOG_MANAGER;
 use alloc::vec::Vec;
 use alloc::string::String;
+use alloc::sync::Arc;
 use axlog::info;
+use axtask::spawn;
+use core::sync::atomic::AtomicI32;
+use crate::sync::sleeplock::init_lock;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(u16)]
@@ -261,6 +266,33 @@ impl VFile {
         let inode=self.inode.as_ref().unwrap();
         let idata=inode.lock();
         idata.dinode.size as usize
+    }
+
+    pub fn test_sleep_lock(){
+        let mut counter=0;
+        let mut i=1;
+        let count_lock=Arc::new(SleepLock::new(counter,init_lock()));
+        let i_lock=SleepLock::new(i,init_lock());
+        static SUM:AtomicI32=AtomicI32::new(0);
+        for i in 0..2{
+            let clock=count_lock.clone();
+            axtask::spawn(move||{
+                let g1=clock.lock();
+                drop(g1);
+                axtask::yield_now();
+                info!("hello i, {}",i);
+                axtask::yield_now();
+                info!("hello i, {}",i);
+                SUM.fetch_add(1, core::sync::atomic::Ordering::Release);
+            });  
+        }
+        loop {
+            if SUM.load(core::sync::atomic::Ordering::Acquire)==2{
+                break;
+            }
+            axtask::yield_now();
+        } 
+        info!("end!, sum is {}",SUM.load(core::sync::atomic::Ordering::Acquire));
     }
 }
 

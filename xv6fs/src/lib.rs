@@ -34,6 +34,7 @@ use disk_inode::{InodeType,DiskInode};
 use log::{LOG_MANAGER,Log};
 use superblock::SUPER_BLOCK;
 use xv6fs::Xv6FileSystem;
+pub use sync::sleeplock::*;
 
 pub unsafe fn init(block_dev:Arc<dyn BlockDevice>,dev:u32) {
     BLOCK_CACHE_MANAGER.set_block_device(Arc::clone(&block_dev));
