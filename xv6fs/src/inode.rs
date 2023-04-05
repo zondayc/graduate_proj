@@ -4,6 +4,7 @@ use axlog::{info, warn}; // Use log crate when building application
 #[cfg(test)]
 use std::{println as info, println as warn}; // Workaround to use prinltn! for logs.
 
+use crate::{SleepLock, init_lock, SleepLockGuard};
 use crate::fs_const::{BSIZE, DIRSIZ, IPB, NDIRECT, NINDIRECT, NINODE, ROOTDEV, ROOTINUM};
 use crate::log::LOG_MANAGER;
 use crate::bitmap::{inode_alloc};
@@ -24,22 +25,23 @@ use super::stat::Stat;
 use crate::disk_inode::{ InodeType, DiskInode, DirEntry };
 use super::bitmap::{balloc, bfree};
 use alloc::{vec::Vec,string::String};
+use lazy_init::LazyInit;
 
-pub static ICACHE: InodeCache = InodeCache::new();
+pub static ICACHE: LazyInit<InodeCache> = LazyInit::new();
 
 type BlockNo = u32;
 
  
 pub struct InodeCache {
     meta: Mutex<[InodeMeta; NINODE]>,
-    data: [Mutex<InodeData>; NINODE]
+    data: [SleepLock<InodeData>; NINODE]
 }
 
 impl InodeCache {
-    const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             meta: Mutex::new(array![_ => InodeMeta::new(); NINODE]),
-            data: array![_ => Mutex::new(InodeData::new()); NINODE],
+            data: array![_ => SleepLock::new(InodeData::new(),init_lock()); NINODE],
         }
     }
 
@@ -864,7 +866,7 @@ impl Clone for Inode {
 impl Inode {
     /// Lock the inode. 
     /// Load it from the disk if its content not cached yet. 
-    pub fn lock<'a>(&'a self) -> MutexGuard<'a, InodeData> {
+    pub fn lock<'a>(&'a self) -> SleepLockGuard<'a, InodeData> {
         assert!(self.index < NINODE, "index must less than NINODE");
         info!("[Kernel] inode.lock(): inode index: {}, dev: {}, inum: {}", self.index, self.dev, self.inum);
         let mut guard = ICACHE.data[self.index].lock();

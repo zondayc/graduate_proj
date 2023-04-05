@@ -284,10 +284,15 @@ impl VFile {
                 axtask::yield_now();
                 info!("hello i, {}, sum is {}",i,SUM.load(core::sync::atomic::Ordering::Acquire));
                 SUM.fetch_add(1, core::sync::atomic::Ordering::Release);
+                let g1=clock.lock();
+                info!("==========hello i===========, {}",i);
+                axtask::yield_now();
+                SUM.fetch_add(1, core::sync::atomic::Ordering::Release);
+                drop(g1);
             });  
         }
         loop {
-            if SUM.load(core::sync::atomic::Ordering::Acquire)==3{
+            if SUM.load(core::sync::atomic::Ordering::Acquire)==6{
                 break;
             }
             axtask::yield_now();

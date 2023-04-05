@@ -66,13 +66,15 @@ impl FileSystemList {
 // }
 
 pub fn init_filesystems(blk_devs: BlockDevices) {
+    
+    let interface=InterfaceManager{interface:Arc::new(AxFsInterface::new())};
+    INTERFACE_MANAGER.init_by(interface);
     info!("init block device");
     init_block_dev(blk_devs);
     info!("init xv6fs");
     let xfs=Arc::new(VXV6FS::new());
     unsafe{xv6fs::init(Arc::new(DiskOps), 0);}
-    let interface=InterfaceManager{interface:Arc::new(AxFsInterface::new())};
-    INTERFACE_MANAGER.init_by(interface);
+   
 
     let lock_list=FsLockList::new();
     FS_LOCK_LIST.init_by(lock_list);

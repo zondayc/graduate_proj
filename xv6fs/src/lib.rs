@@ -36,9 +36,13 @@ use superblock::SUPER_BLOCK;
 use xv6fs::Xv6FileSystem;
 pub use sync::sleeplock::*;
 
+use crate::inode::{ICACHE, InodeCache};
+
 pub unsafe fn init(block_dev:Arc<dyn BlockDevice>,dev:u32) {
     BLOCK_CACHE_MANAGER.set_block_device(Arc::clone(&block_dev));
     BLOCK_CACHE_MANAGER.binit();
+    let icache=InodeCache::new();
+    ICACHE.init_by(icache);
     SUPER_BLOCK.init(dev);
     let log=LOG_MANAGER.log.lock().deref_mut() as *mut Log;
     log.as_mut().unwrap().init(dev);

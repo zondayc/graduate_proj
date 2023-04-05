@@ -1,8 +1,14 @@
 #![no_std]
 #![no_main]
 
+use core::str;
+use core::sync::atomic::AtomicU32;
+
+use alloc::borrow::ToOwned;
+use alloc::string::ToString;
 use alloc::{string::String, vec::Vec};
 use libax::info;
+use libax::task;
 
 extern crate alloc;
 
@@ -78,11 +84,43 @@ fn test_sleep_lock(){
 fn main() {
     libax::println!("Hello, world!");
 
-    // test_list_files();
-    // test_directory();
-    // test_file();
-
-    test_sleep_lock();
+    //test_list_files();
+    //test_directory();
+    //test_file();
+    
+    //test_sleep_lock();
+    static  COUNTER:AtomicU32=AtomicU32::new(0);
+    for i in 0..4{
+        task::spawn(move||{
+            let mut path="/test";
+            let new_path=path.to_owned()+&i.to_string()+&"\0".to_owned();
+            libax::fs::write(new_path.as_str().into(), b" Hello fs\n").expect("can't write to test file");
+            libax::println!("end write");
+            let file_content = libax::fs::read(new_path.as_str().into()).expect("can't read the test file");
+            assert_eq!(file_content, b" Hello fs\n");
+            libax::fs::read_dir("/".into())
+            .map(|x| {
+                for file_name in x {
+                    libax::println!("{}", file_name);
+                }
+            })
+            .expect("can't read root directory");
+            COUNTER.fetch_add(1, core::sync::atomic::Ordering::Acquire);
+        });
+    }
+    loop {
+        if COUNTER.load(core::sync::atomic::Ordering::Acquire)==4{
+            break;
+        }
+        task::yield_now();
+    } 
+    libax::fs::read_dir("/".into())
+            .map(|x| {
+                for file_name in x {
+                    libax::println!("{}", file_name);
+                }
+            })
+            .expect("can't read root directory");
 
     libax::println!("end test!");
 }

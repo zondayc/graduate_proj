@@ -13,6 +13,7 @@ use core::ops::{Deref, DerefMut};
 use core::sync::atomic::{Ordering, AtomicBool};
 
 use spin::{Mutex, MutexGuard};
+use crate::{SleepLock, SleepLockGuard, init_lock};
 use crate::block_dev::BlockNone;
 
 use super::{BlockDevice,NBUF, BSIZE};
@@ -153,7 +154,7 @@ pub struct Buf<'a>{
     pub rc_ptr: *mut usize,     // pointer to its refcnt in BufCtrl
     /// Guaranteed to be Some during Buf's lifetime.
     /// Introduced to let the sleeplock guard drop before the whole struct.
-    data:  Option<MutexGuard<'a, BufData>>,
+    data:  Option<SleepLockGuard<'a, BufData>>,
 }
 
 impl<'a> Buf<'a> {
@@ -312,14 +313,14 @@ struct BufInner {
     // the bcache spinlock and the relevant buf sleeplock
     // holding either of which can get access to them
     valid: AtomicBool,
-    data: Mutex<BufData>,
+    data: SleepLock<BufData>,
 }
 
 impl BufInner {
-    const fn new() -> Self {
+    fn new() -> Self {
         Self {
             valid: AtomicBool::new(false),
-            data: Mutex::new(BufData::new()),
+            data: SleepLock::new(BufData::new(),init_lock()),
         }
     }
 }
