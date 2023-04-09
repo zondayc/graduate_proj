@@ -10,7 +10,7 @@ pub struct vfsFile{
 }
 impl VfsFile for vfsFile {
     fn open(&self, path: &str) -> Option<Box<dyn VfsFile>>{
-        info!("vfsfile: path is {}",path);
+        //info!("vfsfile: path is {}",path);
         let vfs_file=VFile::vfile_open(path,true, true).unwrap();
         Some(Box::new(vfsFile{vfile:vfs_file}))
     }
@@ -44,7 +44,7 @@ impl VfsFile for vfsFile {
 
     }
     fn remove(&self, file_name: &str){
-        info!("path = {}",file_name);
+        //info!("path = {}",file_name);
         self.vfile.vfile_remove(file_name);
     }
     fn size(&self) -> usize{

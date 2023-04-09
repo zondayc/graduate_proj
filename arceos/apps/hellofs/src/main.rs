@@ -98,6 +98,7 @@ fn main() {
             libax::println!("end write");
             let file_content = libax::fs::read(new_path.as_str().into()).expect("can't read the test file");
             assert_eq!(file_content, b" Hello fs\n");
+            task::yield_now();
             libax::fs::read_dir("/".into())
             .map(|x| {
                 for file_name in x {

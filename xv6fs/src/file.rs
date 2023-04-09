@@ -215,7 +215,7 @@ impl VFile {
     }
 
     pub fn vfile_open(path:&str,readable:bool,writeable:bool)->Option<Self>{
-        info!("vfile open: path is {}",path);
+        //info!("vfile open: path is {}",path);
         let inode=ICACHE.create(path.as_bytes(),crate::disk_inode::InodeType::File, 2, 1).unwrap();
         Some(Self { ftype: FileType::File, readable, writeable, inode:Some(inode), offset:0, major:2})
     }

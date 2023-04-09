@@ -115,7 +115,7 @@ impl DiskOperation for DiskOps {
 
 impl BlockDevice for DiskOps {
     fn read_block(&self,index: usize, buf: &mut [u8]) {
-        info!("read blockdevice");
+        //info!("read blockdevice");
         BLOCK_DEV
             .0
             .read_block(index, buf)
@@ -152,10 +152,10 @@ impl FsInterface for AxFsInterface{
         self.fs_lock_list.write().new_lock()
     }
     fn sleep_cur_proc(&self,index:usize) {
-        info!("index is {}",index);
-        info!("before, lock is {}",self.fs_lock_list.read().lock_list[index].flag.load(core::sync::atomic::Ordering::Acquire));
+        //info!("index is {}",index);
+        //info!("before, lock is {}",self.fs_lock_list.read().lock_list[index].flag.load(core::sync::atomic::Ordering::Acquire));
         self.fs_lock_list.read().lock_list[index].sleep_cur_task();
-        info!("after, lock is {}",self.fs_lock_list.read().lock_list[index].flag.load(core::sync::atomic::Ordering::Acquire));
+        //info!("after, lock is {}",self.fs_lock_list.read().lock_list[index].flag.load(core::sync::atomic::Ordering::Acquire));
     }
     fn wake_up_next_proc(&self,index:usize) {
         self.fs_lock_list.read().lock_list[index].wake_up_next_proc();

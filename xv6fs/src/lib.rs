@@ -31,10 +31,12 @@ pub use block_dev::BlockDevice;
 use buffer_cache::BLOCK_CACHE_MANAGER;
 use fs_const::{NBUF,BSIZE};
 use disk_inode::{InodeType,DiskInode};
-use log::{LOG_MANAGER,Log};
+use log::{LOG_MANAGER,Log,LogHeader};
 use superblock::SUPER_BLOCK;
 use xv6fs::Xv6FileSystem;
 pub use sync::sleeplock::*;
+use core::mem::size_of;
+
 
 use crate::inode::{ICACHE, InodeCache};
 
@@ -46,5 +48,6 @@ pub unsafe fn init(block_dev:Arc<dyn BlockDevice>,dev:u32) {
     SUPER_BLOCK.init(dev);
     let log=LOG_MANAGER.log.lock().deref_mut() as *mut Log;
     log.as_mut().unwrap().init(dev);
+    info!("block size:{}, disk inode size:{}, log header size:{}",BSIZE,size_of::<DiskInode>(),size_of::<LogHeader>());
     info!("file system: setup done!");
 }

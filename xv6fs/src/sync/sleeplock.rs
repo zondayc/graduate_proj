@@ -40,10 +40,10 @@ impl<T: ?Sized> SleepLock<T> {
     /// non-blocking, but might sleep if other p lock this sleeplock
     pub fn lock(&self) -> SleepLockGuard<T> {
         //let mut guard = self.lock.lock();
-        info!("xv6 sleep lock: lock!");
-        info!("1flag is {}",INTERFACE_MANAGER.interface.get_flag(self.index));
+        //info!("xv6 sleep lock: lock!");
+        //info!("1flag is {}",INTERFACE_MANAGER.interface.get_flag(self.index));
         INTERFACE_MANAGER.interface.sleep_cur_proc(self.index);
-        info!("2flag is {}",INTERFACE_MANAGER.interface.get_flag(self.index));
+        //info!("2flag is {}",INTERFACE_MANAGER.interface.get_flag(self.index));
         //drop(guard);
         SleepLockGuard {
             lock: &self,
@@ -53,7 +53,7 @@ impl<T: ?Sized> SleepLock<T> {
 
     /// Called by its guard when dropped
     pub fn unlock(&self) {
-        info!("unlock!");
+        //info!("unlock!");
         self.wake_up();//我感觉这里还是得搞个队列吧
     }
 

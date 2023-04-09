@@ -37,7 +37,7 @@ impl FsLockList {
         let index=self.lock_list.len();
         let lock=FsLockManager::new();
         self.lock_list.push(lock);
-        info!("push!");
+        //info!("push!");
         index
     }
 

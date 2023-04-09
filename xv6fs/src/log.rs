@@ -138,7 +138,7 @@ impl Log {
             }
             disk_buf.bwrite();
             if !recovering {
-                info!("unpin disk buf {}",self.lh.blocknos[i as usize]);
+                //info!("unpin disk buf {}",self.lh.blocknos[i as usize]);
                 unsafe { disk_buf.unpin(); }
             }
             drop(log_buf);
@@ -218,7 +218,7 @@ impl LogManager {
         // record the buf's blockno in the log header
         for i in 0..guard.lh.len {
             if guard.lh.blocknos[i as usize] == buf.read_blockno() {
-                info!("buf blockno {} is in the lh.blocknos, and now len is {}",guard.lh.blocknos[i as usize],guard.lh.len);
+                //info!("buf blockno {} is in the lh.blocknos, and now len is {}",guard.lh.blocknos[i as usize],guard.lh.len);
                 drop(guard);
                 drop(buf);
                 return;
@@ -231,7 +231,7 @@ impl LogManager {
         let len = guard.lh.len as usize;
         guard.lh.blocknos[len] = buf.read_blockno();
         guard.lh.len += 1;
-        info!("insert blockno {},Log Header len +1, and now len is {}",buf.read_blockno(),guard.lh.len);
+        //info!("insert blockno {},Log Header len +1, and now len is {}",buf.read_blockno(),guard.lh.len);
         drop(guard);
         drop(buf);
     }

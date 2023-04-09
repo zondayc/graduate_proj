@@ -130,7 +130,7 @@ impl BlockCacheManager {
         let inner=self.inner.exclusive_access();
         let mut b = self.bget(Arc::clone(&inner.block_device), dev, block_id);
         if !self.bufs[b.index].valid.load(Ordering::Relaxed) {
-            info!("not find block {} in cache!",block_id);
+            //info!("not find block {} in cache!",block_id);
             inner.block_device.read_block(block_id as usize, b.data.as_mut().unwrap().0.as_mut());
             self.bufs[b.index].valid.store(true, Ordering::Relaxed);
         }
@@ -185,13 +185,13 @@ impl<'a> Buf<'a> {
     pub unsafe fn pin(&self) {
         let rc = *self.rc_ptr;
         *self.rc_ptr = rc + 1;
-        info!("buf {} rc +1 = {}",self.block_id,*self.rc_ptr);
+        //info!("buf {} rc +1 = {}",self.block_id,*self.rc_ptr);
     }
 
     /// Unpin the buf.
     /// SAFETY: it should be called matching pin.
     pub unsafe fn unpin(&self) {
-        info!("buf {} rc = {}",self.block_id,*self.rc_ptr);
+        //info!("buf {} rc = {}",self.block_id,*self.rc_ptr);
         let rc = *self.rc_ptr;
         if rc <= 1 {
             panic!("buf unpin not match");
