@@ -20,7 +20,7 @@ pub struct DiskInode {
     pub minor: i16, // Minor device number (T_DEVICE only)
     pub nlink: i16, // Number of links to inode in file system
     pub size: u32, // Size of file (bytes)
-    pub addrs: [u32; NDIRECT+1] // Data block addresses
+    pub addrs: [u32; NDIRECT+2] // Data block addresses
 }
 
 #[repr(C)]
@@ -38,7 +38,7 @@ impl DiskInode {
             minor: 0,
             nlink: 0,
             size: 0,
-            addrs: [0; NDIRECT+1]
+            addrs: [0; NDIRECT+2]
         }
     }
 

@@ -28,9 +28,10 @@ pub const FSSIZE: usize = 1000;
 
 pub const ROOTINUM: u32 = 1;
 
-pub const NDIRECT: usize = 12;
+pub const NDIRECT: usize = 11;
 pub const NINDIRECT: usize =  BSIZE / 8;
-pub const MAXFILE: usize = NDIRECT + NINDIRECT;
+pub const NININDIRECT: usize = BSIZE / 8 * NINDIRECT;
+pub const MAXFILE: usize = NDIRECT + NINDIRECT + NININDIRECT;
 
 /// Directory is a file containing a sequence of dirent structures
 pub const DIRSIZ: usize = 14;

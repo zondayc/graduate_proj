@@ -5,7 +5,7 @@ use axlog::{info, warn}; // Use log crate when building application
 use std::{println as info, println as warn}; // Workaround to use prinltn! for logs.
 
 use crate::{SleepLock, init_lock, SleepLockGuard};
-use crate::fs_const::{BSIZE, DIRSIZ, IPB, NDIRECT, NINDIRECT, NINODE, ROOTDEV, ROOTINUM};
+use crate::fs_const::{BSIZE, DIRSIZ, IPB, NDIRECT, NINDIRECT, NINODE, ROOTDEV, ROOTINUM, NININDIRECT};
 use crate::log::LOG_MANAGER;
 use crate::bitmap::{inode_alloc};
 use crate::misc::{min, mem_set};
@@ -465,6 +465,30 @@ impl InodeData {
             self.dinode.addrs[NDIRECT] = 0;
         }
 
+        if self.dinode.addrs[NDIRECT+1] > 0 {
+            let buf = BLOCK_CACHE_MANAGER.bread(inode.dev, self.dinode.addrs[NDIRECT+1]);
+            let buf_ptr=buf.raw_data() as *const BlockNo;
+            for i in 0..NINDIRECT{
+                let ibn=unsafe { read(buf_ptr.offset(i as isize))};
+                info!("[Xv6fs] inode truncate: indirect block no is {}",ibn);
+                if ibn > 0{
+                    let ibuf=BLOCK_CACHE_MANAGER.bread(inode.dev, ibn);
+                    let ibuf_ptr=ibuf.raw_data() as *const BlockNo;
+                    for j in 0..NINDIRECT{
+                        let bn = unsafe{ read(ibuf_ptr.offset(j as isize)) };
+                        info!("[Xv6fs] inode truncate: direct block no is {}",bn);
+                        if bn > 0 {
+                            bfree(inode.dev, bn);
+                        }
+                    }
+                    drop(ibuf);
+                }
+            }
+            drop(buf);
+            bfree(inode.dev, self.dinode.addrs[NDIRECT+1]);
+            self.dinode.addrs[NDIRECT+1]=0;
+        }
+
         self.dinode.size = 0;
         self.update();
     }
@@ -520,10 +544,43 @@ impl InodeData {
                     addr = balloc(self.dev);
                     write(buf_data.offset(count as isize), addr);
                 }
-                LOG_MANAGER.write(buf);
+                LOG_MANAGER.write(buf);//这里是个什么玩意啊，裂开
             }
             // drop(buf);
             return Ok(addr)
+        }
+        if offset_bn < NINDIRECT+NDIRECT+NININDIRECT{
+            let count=offset_bn-NDIRECT-NINDIRECT;
+            if self.dinode.addrs[NDIRECT+1]==0{
+                addr=balloc(self.dev);
+                self.dinode.addrs[NDIRECT+1]=addr;
+            }else {
+                addr=self.dinode.addrs[NDIRECT+1];
+            }
+            let indirect_count=count/64;
+            let indirect_offset=count%64;
+            let buf=BLOCK_CACHE_MANAGER.bread(self.dev, addr);
+            let buf_data=buf.raw_data() as * mut u32;
+            let mut iaddr = unsafe { read(buf_data.offset(indirect_count as isize))};
+            if iaddr == 0{
+                unsafe{
+                    iaddr=balloc(self.dev);
+                    write(buf_data.offset(indirect_count as isize), iaddr);
+                }
+                LOG_MANAGER.write(buf);
+                drop(buf_data);
+            }
+            let ibuf=BLOCK_CACHE_MANAGER.bread(self.dev, iaddr);
+            let ibuf_data=ibuf.raw_data() as *mut u32;
+            addr=unsafe { read(ibuf_data.offset(indirect_offset as isize))};
+            if addr ==0 {
+                unsafe{
+                    addr=balloc(self.dev);
+                    write(ibuf_data.offset(indirect_offset as isize), addr);
+                }
+                LOG_MANAGER.write(ibuf);
+            }
+            return Ok(addr);
         }
         panic!("inode bmap: out of range.");
     }
@@ -598,8 +655,9 @@ impl InodeData {
         //     info!("[Kernel] write: end: {}, dinode.size: {}", end, self.dinode.size);
         //     return Err("inode write: end is more than diskinode's size.")
         // }
-        info!("[Xv6fs] writr filr/dir: begin inode write");
+        info!("[Xv6fs] inode write file/dir: begin inode write");
         let mut offset = offset as usize;
+        info!("[Xv6fs] inode write file/dir: write block offset is {}",offset);
         let count = count as usize;
         let mut total = 0;
         let mut block_basic = offset / BSIZE;
@@ -607,6 +665,7 @@ impl InodeData {
         while total < count {
             let surplus_len = count - total;
             let block_no = self.bmap(block_basic as u32)?;
+            info!("[Xv6fs] inode write file/dir: write block no is {}",block_no);
             let mut buf = BLOCK_CACHE_MANAGER.bread(self.dev, block_no);
             let write_len = min(surplus_len, BSIZE - block_offset);
             // if copy_to_kernel(

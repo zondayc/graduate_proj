@@ -80,15 +80,8 @@ fn test_sleep_lock(){
     libax::fs::test_sleep_lock();
 }
 
-#[no_mangle]
-fn main() {
-    libax::println!("Hello, world!");
 
-    //test_list_files();
-    //test_directory();
-    //test_file();
-    
-    //test_sleep_lock();
+fn test_concurrent_fs(){
     static  COUNTER:AtomicU32=AtomicU32::new(0);
     for i in 0..4{
         task::spawn(move||{
@@ -107,6 +100,7 @@ fn main() {
             })
             .expect("can't read root directory");
             COUNTER.fetch_add(1, core::sync::atomic::Ordering::Acquire);
+            libax::fs::remove_file(new_path.as_str().into());
         });
     }
     loop {
@@ -124,4 +118,46 @@ fn main() {
             .expect("can't read root directory");
 
     libax::println!("end test!");
+}
+
+fn test_huge_write(){
+    libax::println!("{:=^30}", " file list ");
+    libax::fs::read_dir("/".into())
+            .map(|x| {
+                for file_name in x {
+                    libax::println!("{}", file_name);
+                }
+            })
+            .expect("can't read root directory");
+    // write a test file, if the file not exists, then create it
+    let mut text=String::from("hello");
+    let text2=String::from("\0\0");
+    for _ in 0..40000{//bitmap分配这里有问题捏
+        text=text.to_owned()+&text2.clone().to_owned();
+    }
+    //libax::fs::write("/test\0".into(), text.as_bytes()).expect("can't write to test file");
+    libax::println!("end write");
+    // read the file from the file
+    libax::fs::remove_file("/test\0".into()).expect("can't remove test file");
+    libax::println!("{:=^30}", " file list ");
+    libax::fs::read_dir("/".into())
+            .map(|x| {
+                for file_name in x {
+                    libax::println!("{}", file_name);
+                }
+            })
+            .expect("can't read root directory");
+}
+#[no_mangle]
+fn main() {
+    libax::println!("Hello, world!");
+
+    //test_list_files();
+    //test_directory();
+    //test_file();
+    
+    //test_sleep_lock();
+    //test_concurrent_fs();
+    test_huge_write();
+    
 }

@@ -6,7 +6,7 @@ use std::{println as info, println as warn}; // Workaround to use prinltn! for l
 
 use bit_field::BitField;
 
-use crate::superblock::SUPER_BLOCK;
+use crate::{superblock::SUPER_BLOCK, block_dev::BlockNone};
 use crate::log::LOG_MANAGER;
 use crate::buffer_cache::BLOCK_CACHE_MANAGER;
 use super::{ InodeType, DiskInode };
@@ -78,18 +78,19 @@ pub fn balloc(dev: u32) -> u32 {
 }
 
 pub fn bfree(devno:u32,blockno:u32)->Result<(),&'static str>{
+    info!("[Xv6fs] bfree: free block no is {}",blockno);
     let bm_blockno=unsafe {SUPER_BLOCK.bitmap_blockno(blockno)};
     let mut buf=BLOCK_CACHE_MANAGER.bread(0, bm_blockno);
     let bi=blockno%8;
     let offset=blockno/8;
     let buf_ptr=unsafe {(buf.raw_data_mut() as *mut u8).offset(offset as isize).as_mut().unwrap()};
     let buf_val=unsafe {ptr::read(buf_ptr)};
-    info!("buf val is {}",buf_val);
+    //info!("buf val is {}",buf_val);
     if buf_val&(1<<bi)==0{
         panic!("this bit is not alloc yet");
     }
     let new_val=buf_val^(1<<bi);
-    info!("new val is {}",new_val);
+    //info!("new val is {}",new_val);
     unsafe{ptr::write(buf_ptr, new_val)};
     //unsafe{info!("buf is {:?}",buf.raw_data().as_ref().unwrap())};
     LOG_MANAGER.write(buf);
@@ -105,7 +106,7 @@ pub fn inode_alloc(dev: u32, itype: InodeType) -> u32 {
         let dinode = unsafe { (buf.raw_data_mut() as *mut DiskInode).offset(offset) };
         let dinode = unsafe { &mut *dinode };
         if dinode.try_alloc(itype).is_ok() {
-            info!("inode alloc: inum is {} and offset is {}",inum,offset);
+            info!("[Xv6fs] inode alloc: inum is {} and offset is {}",inum,offset);
             LOG_MANAGER.write(buf);
             return inum
         }

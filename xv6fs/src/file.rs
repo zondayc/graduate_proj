@@ -104,6 +104,7 @@ impl VFile {
     /// Write to file f. 
     /// addr is a user virtual address
     /// addr is src address
+    /// 不涉及append操作，这个另外实现，通过给inode添加size或者添加fd table来实现
     pub fn vfile_write(
         &self, 
         addr: usize, 
@@ -124,9 +125,11 @@ impl VFile {
                 // might be writing a device like console. 
                 let max = ((MAXOPBLOCKS -1 -1 -2) / 2) * BSIZE;
                 let mut count  = 0;
+                let mut offset=0;
                 while count < len {
                     let mut write_bytes = len - count;
                     if write_bytes > max { write_bytes = max; }
+                    info!("[Xv6fs] vfile_write: write bytes is {}",write_bytes);
 
                     // start log
                     //LOG.begin_op();
@@ -136,7 +139,7 @@ impl VFile {
                     // return err when failt to write
                     inode_guard.write(
                         addr + count, 
-                        self.offset, 
+                        offset, 
                         write_bytes as u32
                     )?;
 
@@ -148,8 +151,7 @@ impl VFile {
 
                     // update loop data
                     // self.offset += write_bytes as u32;
-                    let offset = unsafe{ &mut *(&self.offset as *const _ as *mut u32) };
-                    *offset += write_bytes as u32;
+                    offset+=write_bytes as u32;
                     count += write_bytes;
                     
                 }
@@ -266,6 +268,14 @@ impl VFile {
         let inode=self.inode.as_ref().unwrap();
         let idata=inode.lock();
         idata.dinode.size as usize
+    }
+
+    pub fn vfile_link(&self){
+
+    }
+
+    pub fn vfile_unlink(&self){
+        
     }
 
     pub fn test_sleep_lock(){
