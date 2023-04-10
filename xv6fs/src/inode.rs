@@ -797,7 +797,48 @@ impl InodeData {
             }
         }
         false
+    }
 
+    pub fn rename(path:&str,new_name:&str){
+        let mut flag=false;
+        let mut old_name = [0u8; DIRSIZ];
+        let parent=match ICACHE.namei_parent(&path.as_bytes(), &mut old_name) {
+            Some(cur)=>cur,
+            None=>panic!("[Xv6fs] vfile_unlink: not find path")
+        };
+        let mut parent_guard=parent.lock();
+        let de_size = size_of::<DirEntry>();
+        let mut dir_entry = DirEntry::new();
+        let dir_entry_ptr = &mut dir_entry as *mut _ as *mut u8;
+        for offset in (0..parent_guard.dinode.size).step_by(de_size) {
+            parent_guard.read(
+                dir_entry_ptr as usize, 
+                offset, 
+                de_size as u32
+            ).expect("Cannot read entry in this dir");
+            if dir_entry.inum == 0 {
+                continue;
+            }
+            //info!("dir_entry_name: {}, name: {}, inum: {}", String::from_utf8(dir_entry.name.to_vec()).unwrap(), String::from_utf8(name.to_vec()).unwrap(),dir_entry.inum);
+            for i in 0..DIRSIZ {
+                if dir_entry.name[i] != old_name[i] {
+                    break;
+                }
+                if dir_entry.name[i] == 0 {
+                    let name=&new_name.as_bytes();
+                    for i in 0..DIRSIZ {
+                        dir_entry.name[i]=name[i];
+                        if name[i]==0{
+                            break;
+                        }
+                    }
+                    parent_guard.write(dir_entry_ptr as usize, offset, de_size as u32);
+                    LOG_MANAGER.commit_log();
+                    return;
+                }
+            }
+        }
+        panic!("[Xv6fs] inode rename: not find dir entry");
     }
 
     pub fn ls(&mut self)->Option<Vec<String>>{

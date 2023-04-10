@@ -1,9 +1,8 @@
 use crate::SleepLock;
 use crate::bitmap::inode_alloc;
-use crate::disk_inode::InodeType;
-use crate::fs_const::{ BSIZE, MAXOPBLOCKS };
-use crate::inode::{ICACHE, self};
-use super::inode::Inode;
+use crate::disk_inode::{InodeType};
+use crate::fs_const::{ BSIZE, MAXOPBLOCKS, DIRSIZ };
+use crate::inode::{ICACHE,Inode, InodeData};
 use super::stat::Stat;
 use crate::log::LOG_MANAGER;
 use alloc::vec::Vec;
@@ -13,6 +12,7 @@ use axlog::info;
 use axtask::spawn;
 use core::sync::atomic::AtomicI32;
 use crate::sync::sleeplock::init_lock;
+use core::mem::size_of;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(u16)]
@@ -166,6 +166,48 @@ impl VFile {
 
     }
 
+    pub fn vfile_append(
+        &self, 
+        addr: usize, 
+        len: usize
+    ) -> Result<usize, &'static str> {
+        let ret; 
+        if !self.vfile_writeable() {
+            panic!("file can't be written")
+        }
+        match self.ftype {
+            FileType::File|FileType::Directory => {
+                let inode = self.inode.as_ref().unwrap();
+                let mut inode_guard = inode.lock();
+                let max = ((MAXOPBLOCKS -1 -1 -2) / 2) * BSIZE;
+                let mut count  = 0;
+                let mut offset=inode_guard.dinode.size;
+                drop(inode_guard);
+                while count < len {
+                    let mut write_bytes = len - count;
+                    if write_bytes > max { write_bytes = max; }
+                    info!("[Xv6fs] vfile_write: write bytes is {}",write_bytes);
+                    let mut inode_guard = inode.lock();
+                    inode_guard.write(
+                        addr + count, 
+                        offset, 
+                        write_bytes as u32
+                    )?;
+                    drop(inode_guard);
+                    LOG_MANAGER.commit_log();
+                    offset+=write_bytes as u32;
+                    count += write_bytes;
+                }
+                ret = count;
+                Ok(ret)
+            },
+            _ => {
+                panic!("Invalid File Type!")
+            }
+        }
+
+    }
+
     fn vfile_readable(&self) -> bool {
         self.readable
     }
@@ -270,12 +312,73 @@ impl VFile {
         idata.dinode.size as usize
     }
 
-    pub fn vfile_link(&self){
-
+    pub fn vfile_link(src_path:&str,dir_path:&str){
+        let inode=match ICACHE.namei(src_path.as_bytes()) {
+            Some(cur)=>{
+                cur
+            },
+            None=>{
+                panic!("[Xv6fs] vfile_link: not find src path");
+            }
+        };
+        let mut inode_guard=inode.lock();
+        if inode_guard.dinode.itype == InodeType::Directory {
+            panic!("[Xv6fs] vfile_link: cannot link directory");
+        }
+        inode_guard.dinode.nlink+=1;
+        let mut name = [0u8; DIRSIZ];
+        let parent=match ICACHE.namei_parent(&dir_path.as_bytes(), &mut name) {
+            Some(cur)=>{
+                cur
+            },
+            None => {
+                panic!("[Xv6fs] vfile_link: not find dir path");
+            }
+        };
+        let mut parent_guard=parent.lock();
+        parent_guard.dir_link(&name, inode.inum);
+        inode_guard.update();
+        parent_guard.update();
+        drop(parent_guard);
+        drop(inode_guard);
+        LOG_MANAGER.commit_log();
     }
 
-    pub fn vfile_unlink(&self){
-        
+    pub fn vfile_unlink(&self,path:&str){
+        let mut name = [0u8; DIRSIZ];
+        let parent=match ICACHE.namei_parent(&path.as_bytes(), &mut name) {
+            Some(cur)=>cur,
+            None=>panic!("[Xv6fs] vfile_unlink: not find path")
+        };
+        let mut parent_guard=parent.lock();
+        let inode=match parent_guard.dir_lookup(&name) {
+            Some(cur) => {
+                cur
+            },
+            _ => {
+                panic!("[Xv6fs] vfile_unlink: not find name");
+            }
+        };
+        let mut inode_guard=inode.lock();
+        if inode_guard.dinode.itype==InodeType::Directory{
+            panic!("[Xv6fs] vfile_link: cannot unlink directory");
+        }
+        inode_guard.dinode.nlink-=1;
+        let flag=match inode_guard.dinode.nlink {
+            0=>true,
+            _=>false
+        };
+        inode_guard.update();
+        drop(inode_guard);
+        drop(parent_guard);
+        LOG_MANAGER.commit_log();
+        if flag{
+            self.vfile_remove(path);
+        }
+    }
+
+    pub fn vfile_rename(&self,path:&str,new_name:&str){
+        InodeData::rename(path, new_name);
     }
 
     pub fn test_sleep_lock(){
