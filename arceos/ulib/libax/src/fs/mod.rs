@@ -72,3 +72,7 @@ pub fn create_dir(path: Path) -> Result<()> {
 pub fn test_sleep_lock(){
     axfs::test_sleep_lock();
 }
+
+pub fn test_link_unlink(){
+    axfs::test_link_unlink();
+}

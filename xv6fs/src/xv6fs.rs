@@ -107,10 +107,7 @@ impl Xv6FileSystem {
     pub fn get_root_vfile(&self)->VFile{
         let inode=ICACHE.get_root_dir();
         let idata=inode.lock();
-        let mut ftype=FileType::File;
-        if idata.dinode.itype==InodeType::Directory{
-            ftype=FileType::Directory;
-        }
+        let mut ftype=FileType::Directory;
         drop(idata);
         VFile { 
             ftype,

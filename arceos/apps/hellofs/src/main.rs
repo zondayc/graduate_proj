@@ -80,6 +80,10 @@ fn test_sleep_lock(){
     libax::fs::test_sleep_lock();
 }
 
+fn test_link_unlink(){
+    libax::fs::test_link_unlink();
+}
+
 
 fn test_concurrent_fs(){
     static  COUNTER:AtomicU32=AtomicU32::new(0);
@@ -158,6 +162,8 @@ fn main() {
     
     //test_sleep_lock();
     //test_concurrent_fs();
-    test_huge_write();
     
+    //test_huge_write();
+    
+    test_link_unlink();
 }

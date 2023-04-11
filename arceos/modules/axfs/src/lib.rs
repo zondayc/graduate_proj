@@ -168,3 +168,7 @@ impl FsInterface for AxFsInterface{
 pub fn test_sleep_lock(){
     xv6fs::file::VFile::test_sleep_lock();
 }
+
+pub fn test_link_unlink(){
+    xv6fs::file::test_link_unlink();
+}

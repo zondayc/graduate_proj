@@ -13,6 +13,7 @@ use axtask::spawn;
 use core::sync::atomic::AtomicI32;
 use crate::sync::sleeplock::init_lock;
 use core::mem::size_of;
+use crate::xv6fs::Xv6FileSystem;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(u16)]
@@ -277,8 +278,8 @@ impl VFile {
         LOG_MANAGER.commit_log();
     }
 
-    pub fn vfile_create(&self,path:&str,itype:InodeType)->Self{
-        info!("vfile create: path is {}",path);
+    pub fn vfile_create_under_dir(&self,file_name:&str,itype:InodeType)->Self{
+        info!("vfile create: path is {}",file_name);
         let self_inode=self.inode.as_ref().unwrap();
         let mut self_idata=self_inode.lock();
         let dev=self_inode.dev;
@@ -298,7 +299,7 @@ impl VFile {
             idata.dir_link(".".as_bytes(), inum);
             idata.dir_link("..".as_bytes(), self_inode.inum);
         }
-        self_idata.dir_link(path.as_bytes(), inode.inum).expect("parent inode fail to link");
+        self_idata.dir_link(file_name.as_bytes(), inode.inum).expect("parent inode fail to link");
         drop(idata);
         drop(self_idata);
         LOG_MANAGER.commit_log();
@@ -312,7 +313,7 @@ impl VFile {
         idata.dinode.size as usize
     }
 
-    pub fn vfile_link(src_path:&str,dir_path:&str){
+    pub fn vfile_link(&self,src_path:&str,dir_path:&str){
         let inode=match ICACHE.namei(src_path.as_bytes()) {
             Some(cur)=>{
                 cur
@@ -344,7 +345,8 @@ impl VFile {
         LOG_MANAGER.commit_log();
     }
 
-    pub fn vfile_unlink(&self,path:&str){
+    pub fn vfile_unlink(&self,path:&str){//目录没有删掉dir entry
+        info!("[Xv6fs] vfile unlink: unlink {}",path);
         let mut name = [0u8; DIRSIZ];
         let parent=match ICACHE.namei_parent(&path.as_bytes(), &mut name) {
             Some(cur)=>cur,
@@ -364,17 +366,21 @@ impl VFile {
             panic!("[Xv6fs] vfile_link: cannot unlink directory");
         }
         inode_guard.dinode.nlink-=1;
+        info!("now disk inode nlink is {}",inode_guard.dinode.nlink);
         let flag=match inode_guard.dinode.nlink {
             0=>true,
             _=>false
         };
         inode_guard.update();
         drop(inode_guard);
-        drop(parent_guard);
-        LOG_MANAGER.commit_log();
         if flag{
+            drop(parent_guard);
             self.vfile_remove(path);
+        }else{
+            parent_guard.dir_unlink(&name);
+            drop(parent_guard);
         }
+        LOG_MANAGER.commit_log();
     }
 
     pub fn vfile_rename(&self,path:&str,new_name:&str){
@@ -414,7 +420,48 @@ impl VFile {
     }
 }
 
+pub fn test_link_unlink(){
+    let inode=ICACHE.get_root_dir();
+    let idata=inode.lock();
+    let mut ftype=FileType::Directory;
+    drop(idata);
+    let root=VFile { 
+        ftype,
+        readable:true, 
+        writeable:true, 
+        inode:Some(inode), 
+        offset:0,
+        major:2 
+    };
+    root.vfile_readdir().map(|x| {
+        for file_name in x {
+            info!("{}", file_name);
+        }
+    })
+    .expect("can't read root directory");
+    root.vfile_create_under_dir("test\0", InodeType::File);
+    root.vfile_readdir().map(|x| {
+        for file_name in x {
+            info!("{}", file_name);
+        }
+    })
+    .expect("can't read root directory");
+    //root.vfile_remove("/test\0");
+    root.vfile_link("/test\0", "/test1\0");
+    let data="hello".as_bytes();
+    let test1=VFile::vfile_open("/test1\0", true, true).unwrap();
+    test1.vfile_write(data.as_ptr() as usize, data.len());
+    root.vfile_unlink("/test1\0");
+    root.vfile_unlink("/test\0");
+    root.vfile_readdir().map(|x| {
+        for file_name in x {
+            info!("{}", file_name);
+        }
+    })
+    .expect("can't read root directory");
 
+
+}
 
 
 
