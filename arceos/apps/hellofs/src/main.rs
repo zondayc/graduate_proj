@@ -135,7 +135,7 @@ fn test_huge_write(){
             .expect("can't read root directory");
     // write a test file, if the file not exists, then create it
     let mut text=String::from("hello");
-    let text2=String::from("\0\0");
+    let text2=String::from("fs");
     for _ in 0..40000{//bitmap分配这里有问题捏
         text=text.to_owned()+&text2.clone().to_owned();
     }

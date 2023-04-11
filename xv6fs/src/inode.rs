@@ -7,7 +7,7 @@ use std::{println as info, println as warn}; // Workaround to use prinltn! for l
 use crate::{SleepLock, init_lock, SleepLockGuard};
 use crate::fs_const::{BSIZE, DIRSIZ, IPB, NDIRECT, NINDIRECT, NINODE, ROOTDEV, ROOTINUM, NININDIRECT};
 use crate::log::LOG_MANAGER;
-use crate::bitmap::{inode_alloc};
+use crate::bitmap::{inode_alloc, bisalloc};
 use crate::misc::{min, mem_set};
 use crate::interface::INTERFACE_MANAGER;
 
@@ -469,7 +469,6 @@ impl InodeData {
                 }
             }
             drop(buf);
-            Self::clear_block(self.dev,self.dinode.addrs[NDIRECT]);
             bfree(inode.dev, self.dinode.addrs[NDIRECT]);//这里要清空这个页面才行
             self.dinode.addrs[NDIRECT] = 0;
         }
@@ -491,12 +490,10 @@ impl InodeData {
                         }
                     }
                     drop(ibuf);
-                    Self::clear_block(inode.dev,ibn);
                     bfree(inode.dev, ibn);
                 }
             }
             drop(buf);
-            Self::clear_block(inode.dev,self.dinode.addrs[NDIRECT+1]);
             bfree(inode.dev, self.dinode.addrs[NDIRECT+1]);
             self.dinode.addrs[NDIRECT+1]=0;
         }
@@ -529,6 +526,7 @@ impl InodeData {
     /// If there is no such block, bmap allocates one. 
     pub fn bmap(&mut self, offset_bn: u32) -> Result<u32, &'static str> {
         let mut addr;
+        let mut iaddr:u32;
         let offset_bn = offset_bn as usize;
         if offset_bn < NDIRECT {
             if self.dinode.addrs[offset_bn] == 0 {
@@ -543,15 +541,15 @@ impl InodeData {
             // Load indirect block, allocating if necessary. 
             let count = offset_bn - NDIRECT;
             if self.dinode.addrs[NDIRECT] == 0 {
-                addr = balloc(self.dev);
-                self.dinode.addrs[NDIRECT] = addr;
+                iaddr = balloc(self.dev);
+                self.dinode.addrs[NDIRECT] = iaddr;
             } else {
-                addr = self.dinode.addrs[NDIRECT]
+                iaddr = self.dinode.addrs[NDIRECT]
             }
-            let buf = BLOCK_CACHE_MANAGER.bread(self.dev, addr);
-            let buf_data = buf.raw_data() as *mut u32;
+            let mut buf = BLOCK_CACHE_MANAGER.bread(self.dev, iaddr);
+            let mut buf_data = buf.raw_data() as *mut u32;
             addr = unsafe{ read(buf_data.offset(count as isize)) };
-            if addr == 0 {
+            if addr == 0 || (bisalloc(addr)){
                 unsafe{
                     addr = balloc(self.dev);
                     write(buf_data.offset(count as isize), addr);
@@ -571,10 +569,10 @@ impl InodeData {
             }
             let indirect_count=count/64;
             let indirect_offset=count%64;
-            let buf=BLOCK_CACHE_MANAGER.bread(self.dev, addr);
-            let buf_data=buf.raw_data() as * mut u32;
+            let mut buf=BLOCK_CACHE_MANAGER.bread(self.dev, addr);
+            let mut buf_data=buf.raw_data() as * mut u32;
             let mut iaddr = unsafe { read(buf_data.offset(indirect_count as isize))};
-            if iaddr == 0{
+            if iaddr == 0|| (bisalloc(iaddr)){
                 unsafe{
                     iaddr=balloc(self.dev);
                     write(buf_data.offset(indirect_count as isize), iaddr);
@@ -582,10 +580,10 @@ impl InodeData {
                 LOG_MANAGER.write(buf);
                 drop(buf_data);
             }
-            let ibuf=BLOCK_CACHE_MANAGER.bread(self.dev, iaddr);
-            let ibuf_data=ibuf.raw_data() as *mut u32;
+            let mut ibuf=BLOCK_CACHE_MANAGER.bread(self.dev, iaddr);
+            let mut ibuf_data=ibuf.raw_data() as *mut u32;
             addr=unsafe { read(ibuf_data.offset(indirect_offset as isize))};
-            if addr ==0 {
+            if addr ==0 || (bisalloc(addr)){
                 unsafe{
                     addr=balloc(self.dev);
                     write(ibuf_data.offset(indirect_offset as isize), addr);

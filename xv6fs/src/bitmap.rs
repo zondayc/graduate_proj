@@ -77,6 +77,21 @@ pub fn balloc(dev: u32) -> u32 {
     panic!("balloc: out of the block ranges.")
 }
 
+pub fn bisalloc(blockno:u32)->bool{
+    let bm_blockno=unsafe {SUPER_BLOCK.bitmap_blockno(blockno)};
+    let mut buf=BLOCK_CACHE_MANAGER.bread(0, bm_blockno);
+    let bi=blockno%8;
+    let offset=blockno/8;
+    let buf_ptr=unsafe {(buf.raw_data_mut() as *mut u8).offset(offset as isize).as_mut().unwrap()};
+    let buf_val=unsafe {ptr::read(buf_ptr)};
+    //info!("buf val is {}",buf_val);
+    if buf_val&(1<<bi)==0{
+        true
+    }else {
+        false
+    }
+}
+
 pub fn bfree(devno:u32,blockno:u32)->Result<(),&'static str>{
     info!("[Xv6fs] bfree: free block no is {}",blockno);
     let bm_blockno=unsafe {SUPER_BLOCK.bitmap_blockno(blockno)};
