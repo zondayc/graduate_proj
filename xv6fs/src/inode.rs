@@ -15,7 +15,7 @@ use spin::{Mutex,MutexGuard};
 
 use core::mem::size_of;
 use core::ptr::{self, read, write};
-use core::str;
+use core::{str, usize};
 
 use array_macro::array;
 
@@ -440,6 +440,14 @@ impl InodeData {
         stat.size = self.dinode.size as usize;
     }
 
+    pub fn clear_block(dev:u32,block_id:u32){
+        let mut buf=BLOCK_CACHE_MANAGER.bread(dev, block_id);
+        let buf_ptr=unsafe{(buf.raw_data_mut() as *mut u8).offset(0)};
+        let empty_block:[u8;BSIZE]=[0;BSIZE];
+        unsafe{ptr::copy(&empty_block as *const u8, buf_ptr, BSIZE)};
+        LOG_MANAGER.write(buf);
+    }
+
     /// Discard the inode data/content. 
     pub fn truncate(&mut self, inode: &Inode) {
         // direct block
@@ -461,7 +469,8 @@ impl InodeData {
                 }
             }
             drop(buf);
-            bfree(inode.dev, self.dinode.addrs[NDIRECT]);
+            Self::clear_block(self.dev,self.dinode.addrs[NDIRECT]);
+            bfree(inode.dev, self.dinode.addrs[NDIRECT]);//这里要清空这个页面才行
             self.dinode.addrs[NDIRECT] = 0;
         }
 
@@ -482,9 +491,12 @@ impl InodeData {
                         }
                     }
                     drop(ibuf);
+                    Self::clear_block(inode.dev,ibn);
+                    bfree(inode.dev, ibn);
                 }
             }
             drop(buf);
+            Self::clear_block(inode.dev,self.dinode.addrs[NDIRECT+1]);
             bfree(inode.dev, self.dinode.addrs[NDIRECT+1]);
             self.dinode.addrs[NDIRECT+1]=0;
         }
@@ -678,13 +690,13 @@ impl InodeData {
             //     return Err("inode write: Fail to either copy in")
             // }
             let dst=unsafe{ (buf.raw_data_mut() as *mut u8).offset((offset % BSIZE) as isize ) };
-            let bufdata=buf.raw_data();
+            //let bufdata=buf.raw_data();
             //unsafe{info!("buf is {:?}",*bufdata);}
-            drop(bufdata);
+            //drop(bufdata);
             unsafe{ptr::copy(src as *const u8, dst, write_len);}
-            let bufdata=buf.raw_data();
+            //let bufdata=buf.raw_data();
             //unsafe{info!("buf is {:?}",*bufdata);}
-            drop(bufdata);
+            //drop(bufdata);
             offset += write_len;
             src += write_len;
             total += write_len;

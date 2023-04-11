@@ -139,7 +139,7 @@ fn test_huge_write(){
     for _ in 0..40000{//bitmap分配这里有问题捏
         text=text.to_owned()+&text2.clone().to_owned();
     }
-    //libax::fs::write("/test\0".into(), text.as_bytes()).expect("can't write to test file");
+    libax::fs::write("/test\0".into(), text.as_bytes()).expect("can't write to test file");
     libax::println!("end write");
     // read the file from the file
     libax::fs::remove_file("/test\0".into()).expect("can't remove test file");
@@ -163,7 +163,7 @@ fn main() {
     //test_sleep_lock();
     //test_concurrent_fs();
     
-    //test_huge_write();
+    test_huge_write();
     
-    test_link_unlink();
+    //test_link_unlink();
 }

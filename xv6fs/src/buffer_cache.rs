@@ -1,5 +1,6 @@
 //! buffer cache layer
 
+use axlog::debug;
 #[cfg(not(test))]
 use axlog::{info, warn}; // Use log crate when building application
  
@@ -244,6 +245,7 @@ impl BufLru {
     /// Recycle an unused buffer from the tail.
     /// Return its index if found.
     fn recycle(&self, dev: u32, blockno: u32) -> Option<(usize, *mut usize)> {
+        debug!("[Xv6fs] BLOCK CACHE MANAGER: recycle unused buffer {}",blockno);
         let mut b = self.tail;
         while !b.is_null() {
             let bref = unsafe { b.as_mut().unwrap() };
