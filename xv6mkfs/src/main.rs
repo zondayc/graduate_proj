@@ -103,7 +103,7 @@ fn main() {
     println!("blockid is {}",block_id);
     println!("dinode is {:?}",dinode);
     block_file.read_block(block_id, &mut buf);
-    println!("buf is {:?}",buf);
+    //println!("buf is {:?}",buf);
     unsafe{
         copy_nonoverlapping(
             &dinode as *const DiskInode, 
@@ -111,7 +111,7 @@ fn main() {
             1
         );
     }
-    println!("buf is {:?}",buf);
+    //println!("buf is {:?}",buf);
     block_file.write_block(block_id, &buf);
 
     //write direct entry 
