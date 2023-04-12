@@ -4,10 +4,7 @@ use crate::fs_const::*;
 mod structs;
 mod fs_const;
 
-use std::intrinsics::drop_in_place;
-use std::{println as info}; // Workaround to use prinltn! for logs.use clap::{App, Arg};
-
-use std::fs::{read_dir, File, OpenOptions};
+use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::mem::size_of;
 use std::sync::Arc;
@@ -28,12 +25,10 @@ struct BlockFile(Mutex<File>);
 impl BlockDevice for BlockFile {
     /// Read a block from file
     fn read_block(&self, block_id: usize, buf: &mut [u8]) {
-        info!("read block {}",block_id);
         let mut file = self.0.lock().unwrap();
         file.seek(SeekFrom::Start((block_id * BLOCK_SZ) as u64))
             .expect("Error when seeking!");
         assert_eq!(file.read(buf).unwrap(), BLOCK_SZ, "Not a complete block!");
-        //info!("read block {} buf {:?}",block_id,buf);
     }
     /// Write a block into file
     fn write_block(&self, block_id: usize, buf: &[u8]) {
@@ -41,7 +36,6 @@ impl BlockDevice for BlockFile {
         file.seek(SeekFrom::Start((block_id * BLOCK_SZ) as u64))
             .expect("Error when seeking!");
         assert_eq!(file.write(buf).unwrap(), BLOCK_SZ, "Not a complete block!");
-        //info!("write block {} with buf {:?}",block_id,buf);
     }
 }
 
@@ -64,7 +58,7 @@ fn ialloc(itype:InodeType)->DiskInode{
 }
 
 fn main() {
-    let nbitmap= FSSIZE/(BSIZE*8) + 1;
+    //let nbitmap= FSSIZE/(BSIZE*8) + 1;
     let ninodeblocks= NDINODES/IPB + 1;
     let nlog=LOGSIZE;
     let nmeta=2 + LOGSIZE + NDINODES/IPB + 1 + FSSIZE/(BSIZE*8) + 1;
