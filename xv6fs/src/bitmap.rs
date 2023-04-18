@@ -1,3 +1,4 @@
+use axlog::debug;
 #[cfg(not(test))]
 use axlog::{info, warn}; // Use log crate when building application
  
@@ -64,7 +65,7 @@ pub fn balloc(dev: u32) -> u32 {
             if (buf_val&m) == 0{ // Is block free?
                 let new_val:u8=buf_val|m;
                 unsafe{ ptr::write(buf_ptr, new_val) };
-                //info!("balloc: inum is {}",bi);
+                debug!("[Xv6fs] balloc: inum is {}",bi);
                 LOG_MANAGER.write(buf);
                 // drop(buf);
                 // bzero(dev, b + bi);
@@ -78,6 +79,9 @@ pub fn balloc(dev: u32) -> u32 {
 }
 
 pub fn bisalloc(blockno:u32)->bool{
+    if blockno > 1000{
+        return false;
+    }
     let bm_blockno=unsafe {SUPER_BLOCK.bitmap_blockno(blockno)};
     let mut buf=BLOCK_CACHE_MANAGER.bread(0, bm_blockno);
     let bi=blockno%8;
@@ -85,15 +89,19 @@ pub fn bisalloc(blockno:u32)->bool{
     let buf_ptr=unsafe {(buf.raw_data_mut() as *mut u8).offset(offset as isize).as_mut().unwrap()};
     let buf_val=unsafe {ptr::read(buf_ptr)};
     //info!("buf val is {}",buf_val);
+    info!("bisalloc end");
     if buf_val&(1<<bi)==0{
-        true
-    }else {
         false
+    }else {
+        true
     }
 }
 
 pub fn bfree(devno:u32,blockno:u32)->Result<(),&'static str>{
     info!("[Xv6fs] bfree: free block no is {}",blockno);
+    if blockno > 1000{
+        return Ok(())
+    }
     let bm_blockno=unsafe {SUPER_BLOCK.bitmap_blockno(blockno)};
     let mut buf=BLOCK_CACHE_MANAGER.bread(0, bm_blockno);
     let bi=blockno%8;
@@ -117,6 +125,7 @@ pub fn inode_alloc(dev: u32, itype: InodeType) -> u32 {
     for inum in 1..size {
         let blockno = unsafe { SUPER_BLOCK.locate_inode(inum) };
         let offset = locate_inode_offset(inum) as isize;
+        debug!("inode alloc");
         let mut buf = BLOCK_CACHE_MANAGER.bread(dev, blockno);
         let dinode = unsafe { (buf.raw_data_mut() as *mut DiskInode).offset(offset) };
         let dinode = unsafe { &mut *dinode };

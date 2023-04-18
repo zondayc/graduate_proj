@@ -135,14 +135,18 @@ fn test_huge_write(){
             .expect("can't read root directory");
     // write a test file, if the file not exists, then create it
     let mut text=String::from("hello");
-    let text2=String::from("fs");
-    for _ in 0..40000{//bitmap分配这里有问题捏
+    let text2=String::from("GGww");
+    for _ in 0..20000{//bitmap分配这里有问题捏
         text=text.to_owned()+&text2.clone().to_owned();
     }
     libax::fs::write("/test\0".into(), text.as_bytes()).expect("can't write to test file");
+    libax::fs::write("/test1\0".into(), text.as_bytes()).expect("can't write to test file");
+    libax::fs::write("/test2\0".into(), text.as_bytes()).expect("can't write to test file");
     libax::println!("end write");
     // read the file from the file
     libax::fs::remove_file("/test\0".into()).expect("can't remove test file");
+    libax::fs::remove_file("/test1\0".into()).expect("can't remove test file");
+    libax::fs::remove_file("/test2\0".into()).expect("can't remove test file");
     libax::println!("{:=^30}", " file list ");
     libax::fs::read_dir("/".into())
             .map(|x| {

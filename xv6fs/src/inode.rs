@@ -1,5 +1,7 @@
+use axlog::debug;
 #[cfg(not(test))]
-use axlog::{info, warn}; // Use log crate when building application
+use axlog::{info, warn}; use core::fmt::DebugList;
+// Use log crate when building application
  
 #[cfg(test)]
 use std::{println as info, println as warn}; // Workaround to use prinltn! for logs.
@@ -109,6 +111,7 @@ impl InodeCache {
                 SUPER_BLOCK.locate_inode(inum)
             };
             // read block into buffer by device and block_id
+            debug!("alloc");
             let mut block = BLOCK_CACHE_MANAGER.bread(dev, block_id);
         
             // Get inode offset in the block
@@ -441,6 +444,7 @@ impl InodeData {
     }
 
     pub fn clear_block(dev:u32,block_id:u32){
+        //debug!("clear block blockid is {}",block_id);
         let mut buf=BLOCK_CACHE_MANAGER.bread(dev, block_id);
         let buf_ptr=unsafe{(buf.raw_data_mut() as *mut u8).offset(0)};
         let empty_block:[u8;BSIZE]=[0;BSIZE];
@@ -460,6 +464,7 @@ impl InodeData {
 
         // indirect block
         if self.dinode.addrs[NDIRECT] > 0 {
+            //debug!("truncate bread indirect block ");
             let buf = BLOCK_CACHE_MANAGER.bread(inode.dev, self.dinode.addrs[NDIRECT]);
             let buf_ptr = buf.raw_data() as *const BlockNo;
             for i in 0..NINDIRECT {
@@ -474,12 +479,14 @@ impl InodeData {
         }
 
         if self.dinode.addrs[NDIRECT+1] > 0 {
+            //debug!("truncate bread inindirect block");
             let buf = BLOCK_CACHE_MANAGER.bread(inode.dev, self.dinode.addrs[NDIRECT+1]);
             let buf_ptr=buf.raw_data() as *const BlockNo;
             for i in 0..NINDIRECT{
                 let ibn=unsafe { read(buf_ptr.offset(i as isize))};
                 info!("[Xv6fs] inode truncate: indirect block no is {}",ibn);
                 if ibn > 0{
+                    //debug!("ibn is {}",ibn);
                     let ibuf=BLOCK_CACHE_MANAGER.bread(inode.dev, ibn);
                     let ibuf_ptr=ibuf.raw_data() as *const BlockNo;
                     for j in 0..NINDIRECT{
@@ -524,7 +531,7 @@ impl InodeData {
     /// 
     /// Return the disk block address of the nth block in inode. 
     /// If there is no such block, bmap allocates one. 
-    pub fn bmap(&mut self, offset_bn: u32) -> Result<u32, &'static str> {
+    pub fn bmap(&mut self, offset_bn: u32, balloc_flag: bool) -> Result<u32, &'static str> {
         let mut addr;
         let mut iaddr:u32;
         let offset_bn = offset_bn as usize;
@@ -543,13 +550,16 @@ impl InodeData {
             if self.dinode.addrs[NDIRECT] == 0 {
                 iaddr = balloc(self.dev);
                 self.dinode.addrs[NDIRECT] = iaddr;
+                Self::clear_block(self.dev, iaddr);
             } else {
                 iaddr = self.dinode.addrs[NDIRECT]
             }
+            //debug!("bread iaddr {}",iaddr);
             let mut buf = BLOCK_CACHE_MANAGER.bread(self.dev, iaddr);
             let mut buf_data = buf.raw_data() as *mut u32;
             addr = unsafe{ read(buf_data.offset(count as isize)) };
-            if addr == 0 || (bisalloc(addr)){
+            debug!("[Xv6fs] bmap: addr is {}",addr);
+            if addr == 0 || !(bisalloc(addr)) || balloc_flag{
                 unsafe{
                     addr = balloc(self.dev);
                     write(buf_data.offset(count as isize), addr);
@@ -564,26 +574,35 @@ impl InodeData {
             if self.dinode.addrs[NDIRECT+1]==0{
                 addr=balloc(self.dev);
                 self.dinode.addrs[NDIRECT+1]=addr;
+                Self::clear_block(self.dev, addr);
             }else {
                 addr=self.dinode.addrs[NDIRECT+1];
             }
             let indirect_count=count/64;
             let indirect_offset=count%64;
+            //debug!("bread addr {}",addr);
             let mut buf=BLOCK_CACHE_MANAGER.bread(self.dev, addr);
             let mut buf_data=buf.raw_data() as * mut u32;
             let mut iaddr = unsafe { read(buf_data.offset(indirect_count as isize))};
-            if iaddr == 0|| (bisalloc(iaddr)){
+            //debug!("[Xv6fs] bmap: iaddr is {}, balloc_flag is {}, bisalloc is {}",iaddr,balloc_flag,bisalloc(iaddr));
+            if balloc_flag!=(!bisalloc(iaddr)) && iaddr != 0{
+                //panic!("balloc flag is not same with !bisalloc");
+            }
+            if iaddr == 0 || !(bisalloc(iaddr)) /*|| balloc_flag*/{
                 unsafe{
                     iaddr=balloc(self.dev);
                     write(buf_data.offset(indirect_count as isize), iaddr);
+                    Self::clear_block(self.dev, iaddr);
                 }
                 LOG_MANAGER.write(buf);
                 drop(buf_data);
             }
+            //debug!("bread indirect iaddr {}",iaddr);
             let mut ibuf=BLOCK_CACHE_MANAGER.bread(self.dev, iaddr);
             let mut ibuf_data=ibuf.raw_data() as *mut u32;
             addr=unsafe { read(ibuf_data.offset(indirect_offset as isize))};
-            if addr ==0 || (bisalloc(addr)){
+            //debug!("[Xv6fs] bmap: addr is {}, balloc_flag is {}, bisalloc is {}",addr,balloc_flag,bisalloc(addr));
+            if addr ==0 || !(bisalloc(addr)) /*|| balloc_flag*/{
                 unsafe{
                     addr=balloc(self.dev);
                     write(ibuf_data.offset(indirect_offset as isize), addr);
@@ -621,7 +640,8 @@ impl InodeData {
         let mut block_offset = offset % BSIZE;
         while total < count as usize {
             let surplus_len = count - total;
-            let block_no = self.bmap(block_basic as u32)?;
+            let block_no = self.bmap(block_basic as u32, false)?;
+            //debug!("read block no is {}",block_no);
             let buf = BLOCK_CACHE_MANAGER.bread(self.dev, block_no);
             let write_len = min(surplus_len, BSIZE - block_offset);
             // if copy_from_kernel(
@@ -672,39 +692,28 @@ impl InodeData {
         let mut total = 0;
         let mut block_basic = offset / BSIZE;
         let mut block_offset = offset % BSIZE;
+        let mut balloc_flag=false;
         while total < count {
             let surplus_len = count - total;
-            let block_no = self.bmap(block_basic as u32)?;
+            let write_len = min(surplus_len, BSIZE - block_offset);
+            if self.dinode.size < (offset+write_len) as u32{
+                balloc_flag=true;
+            }else{
+                balloc_flag=false;
+            }
+            let block_no = self.bmap(block_basic as u32,balloc_flag)?;
             info!("[Xv6fs] inode write file/dir: write block no is {}",block_no);
             let mut buf = BLOCK_CACHE_MANAGER.bread(self.dev, block_no);
-            let write_len = min(surplus_len, BSIZE - block_offset);
-            // if copy_to_kernel(
-            //     unsafe{ (buf.raw_data_mut() as *mut u8).offset((offset % BSIZE) as isize ) }, 
-            //     is_user, 
-            //     src, 
-            //     write_len
-            // ).is_err() {
-            //     drop(buf);
-            //     return Err("inode write: Fail to either copy in")
-            // }
             let dst=unsafe{ (buf.raw_data_mut() as *mut u8).offset((offset % BSIZE) as isize ) };
-            //let bufdata=buf.raw_data();
-            //unsafe{info!("buf is {:?}",*bufdata);}
-            //drop(bufdata);
             unsafe{ptr::copy(src as *const u8, dst, write_len);}
-            //let bufdata=buf.raw_data();
-            //unsafe{info!("buf is {:?}",*bufdata);}
-            //drop(bufdata);
             offset += write_len;
             src += write_len;
             total += write_len;
 
             block_basic = offset / BSIZE;
             block_offset = offset % BSIZE;
-            //info!("write buf on offset {}",offset);
+
             LOG_MANAGER.write(buf);
-            // info!("[Kernel] Write Once");
-            // info!("[Kernel] total: {}, count: {}", total, count);
         }
 
         if self.dinode.size < offset as u32 {
@@ -983,7 +992,7 @@ impl Inode {
         
         if !guard.valid {
             let blockno = unsafe{ SUPER_BLOCK.locate_inode(self.inum) };
-            //info!("blockno is {}",blockno);
+            //info!("lock blockno is {}",blockno);
             let buf = BLOCK_CACHE_MANAGER.bread(self.dev, blockno);
             let offset = locate_inode_offset(self.inum) as isize;
             //info!("offset is {:?}",offset);

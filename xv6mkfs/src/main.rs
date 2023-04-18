@@ -81,7 +81,7 @@ fn main() {
             .read(true)
             .write(true)
             .create(true)
-            .open("target/fs.img").unwrap();
+            .open("target/disk.img").unwrap();
         f.set_len((BLOCK_NUM * BLOCK_SZ) as u64).unwrap();
         f
     })));

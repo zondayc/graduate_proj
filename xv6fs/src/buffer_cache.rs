@@ -87,6 +87,7 @@ impl BlockCacheManager {
 
     ///获取block device对应的buffer
     fn bget(&self,block_device: Arc<dyn BlockDevice>, dev: u32, blockno: u32) -> Buf<'_> {
+        //debug!("bget blockno is {}",blockno);
         let ctrl = self.ctrl.lock();
 
         // find cached block
@@ -106,6 +107,7 @@ impl BlockCacheManager {
             None => {
                 // not cached
                 // recycle the least recently used (LRU) unused buffer
+                //debug!("bget recycle blockno {}",blockno);
                 match ctrl.recycle(dev, blockno) {
                     Some((index, rc_ptr)) => {
                         self.bufs[index].valid.store(false, Ordering::Relaxed);
@@ -129,6 +131,7 @@ impl BlockCacheManager {
      pub fn bread<'a>(&'a self, dev: u32, block_id: u32) -> Buf<'a> {
         //info!("block id is {}",block_id);
         let inner=self.inner.exclusive_access();
+        //debug!("bread block id is {}",block_id);
         let mut b = self.bget(Arc::clone(&inner.block_device), dev, block_id);
         if !self.bufs[b.index].valid.load(Ordering::Relaxed) {
             //info!("not find block {} in cache!",block_id);
