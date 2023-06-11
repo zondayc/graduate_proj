@@ -17,7 +17,7 @@ static mut FREEINODE:usize=1;
 /// Disk layout:
 /// 
 /// boot block | superblock block | log | inode blocks | free bit map | data blocks 
-pub struct Xv6FileSystem{
+pub struct Xv6FS{
     nbitmap:usize,
     ninodeblocks:usize,
     nlog:usize,

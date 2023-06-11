@@ -1,5 +1,5 @@
 #![no_std]
-use xv6fs::{file::{VFile,FileType},disk_inode::InodeType,xv6fs::Xv6FileSystem, BlockDevice};
+use xv6fs::{file::{VFile,FileType},disk_inode::InodeType,xv6fs::Xv6FS, BlockDevice};
 use vfscore::{VfsFile,SeekFrom,VfsFileSystem};
 extern crate alloc;
 use alloc::{boxed::Box,vec::Vec,string::String};
@@ -53,7 +53,7 @@ impl VfsFile for vfsFile {
 }
 
 pub struct VXV6FS{
-    pub fs:Xv6FileSystem,
+    pub fs:Xv6FS,
 }
 
 impl VfsFileSystem for VXV6FS{
@@ -68,7 +68,7 @@ impl VfsFileSystem for VXV6FS{
 
 impl VXV6FS {
     pub fn new()->Self{
-        Self { fs: Xv6FileSystem::new() }
+        Self { fs: Xv6FS::new() }
     }
 }
 
