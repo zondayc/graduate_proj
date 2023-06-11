@@ -20,7 +20,7 @@
 
 ![FS+OS Structure](graphs/structure.png)
 
-文件系统内部的结构如下图所示，左边为文件系统的功能实现模块，右边部分为文件系统与操作系统的接口层以及部分功能支持模块，具体介绍见[README](./xv6fs/README)和毕业论文系统设计章节文件系统部分
+文件系统内部的结构如下图所示，左边为文件系统的功能实现模块，右边部分为文件系统与操作系统的接口层以及部分功能支持模块，具体介绍见[README](./xv6fs/README.md)和毕业论文系统设计章节文件系统部分
 
 ![FS Structure](graphs/filesystem.png)
 
