@@ -33,7 +33,8 @@
 ## 学习与开发过程记录
 
 本项目的开发过程中一部分内容记录在notion中，包含了前期参加rcore-os训练营时的学习内容，以及在毕设代码开发过程中的一些学习笔记。链接如下[笔记](https://silicon-aurora-0f5.notion.site/a176026d8b514658920b3709c8f1f1f3?v=7266118fc7264e5595f36ee8f007a496&pvs=4)
-开发时间线如下图所示。
+
+学习与开发时间线如下图所示。
 ![](graphs/workflow.png)
 
 注：本仓库的文件系统书写于ArceOS支持虚拟文件系统之前，rustc版本为rustc 1.69.0-nightly，支持最新ArceOS的文件系统仓库在[新仓库](https://github.com/zondayc/arceos-with-xv6fs)中，文件系统部分与本仓库基本一致，ArceOS中的crates模块和modules模块中的内容出现了一些变化，具体见新仓库中的文档。
