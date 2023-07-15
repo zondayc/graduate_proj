@@ -6,7 +6,7 @@
 ## 内容概要
 本项目采用Rust语言参考 Xv6 Log-FS编写日志文件系统，随后将其接入到模块化单内核操作系统ArceOS中，根据文件系统的使用需求在Xv6 Log-FS的基础上进行功能拓展，最后参考pjdfstest书写若干测试用例并全部通过。
 ## 文档结构
-[arceos](./arceos/): 包含ArceOS部分的代码、文件系统接入到其中的部分以及相关的测试代码
+[arceos](./arceos/): 包含ArceOS部分的代码、文件系统接入到其中的部分以及相关的测试代码，其中文件系统的中间层模块见如下部分，[crates/xv6fs_shim](./arceos/crates/xv6fs_shim), [crates/vfscore](./arceos/crates/vfscore), [modules/]
 
 [xv6fs](./xv6fs/): 包含模块化实现的文件系统的代码，不能单独运行，需要实现对应的trait后文件系统才能运行
 
